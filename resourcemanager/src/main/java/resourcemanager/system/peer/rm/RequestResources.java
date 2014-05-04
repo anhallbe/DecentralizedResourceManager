@@ -39,6 +39,10 @@ public class RequestResources  {
             super(source, destination);
             this.success = success;
         }
+        
+        public boolean getSuccess() {
+            return this.success;
+        }
     }
     
     public static class RequestTimeout extends Timeout {

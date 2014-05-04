@@ -43,6 +43,7 @@ public final class ResourceManager extends ComponentDefinition {
     Negative<Web> webPort = negative(Web.class);
     Positive<CyclonSamplePort> cyclonSamplePort = positive(CyclonSamplePort.class);
     Positive<TManSamplePort> tmanPort = positive(TManSamplePort.class);
+    
     ArrayList<Address> neighbours = new ArrayList<Address>();
     private Address self;
     private RmConfiguration configuration;
@@ -114,12 +115,22 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResources.Request event) {
             // TODO 
+            int mem = event.getAmountMemInMb();
+            int cpus = event.getNumCpus();
+            boolean success = true;
+            if(availableResources.isAvailable(cpus, mem))
+                availableResources.allocate(cpus, mem);
+            else
+                success = false;
+            RequestResources.Response response = new RequestResources.Response(self, event.getSource(), success);
+            trigger(response, networkPort);
         }
     };
     Handler<RequestResources.Response> handleResourceAllocationResponse = new Handler<RequestResources.Response>() {
         @Override
         public void handle(RequestResources.Response event) {
             // TODO 
+            boolean success = event.getSuccess();
         }
     };
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
@@ -160,7 +171,7 @@ public final class ResourceManager extends ComponentDefinition {
             // TODO: Ask for resources from neighbours
             // by sending a ResourceRequest
 //            RequestResources.Request req = new RequestResources.Request(self, dest,
-//            event.getNumCpus(), event.getAmountMem());
+//            event.getNumCpus(), event.getMemoryInMbs());
 //            trigger(req, networkPort);
         }
     };
