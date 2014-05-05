@@ -105,7 +105,7 @@ public final class ResourceManager extends ComponentDefinition {
                 return;
             }
             Address dest = neighbours.get(random.nextInt(neighbours.size()));
-
+            System.out.println("asdasdasdasd");
 
         }
     };
@@ -115,6 +115,7 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResources.Request event) {
             // TODO 
+            System.out.println(self.getId() + ": Gor resource request from " + event.getSource().getId());
             int mem = event.getAmountMemInMb();
             int cpus = event.getNumCpus();
             boolean success = true;
@@ -131,12 +132,13 @@ public final class ResourceManager extends ComponentDefinition {
         public void handle(RequestResources.Response event) {
             // TODO 
             boolean success = event.getSuccess();
+            System.out.println(self.getId() + ": Resource response received: " + success);
         }
     };
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {
-            System.out.println("Received samples: " + event.getSample().size());
+            System.out.println(self.getId() + ": Received samples: " + event.getSample().size());
             
             // receive a new list of neighbours
             neighbours.clear();
@@ -170,9 +172,13 @@ public final class ResourceManager extends ComponentDefinition {
             System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
             // TODO: Ask for resources from neighbours
             // by sending a ResourceRequest
-//            RequestResources.Request req = new RequestResources.Request(self, dest,
-//            event.getNumCpus(), event.getMemoryInMbs());
-//            trigger(req, networkPort);
+            if(neighbours.size()>0) {
+                Address dest = neighbours.get(0);
+                RequestResources.Request req = new RequestResources.Request(self, dest,
+                event.getNumCpus(), event.getMemoryInMbs());
+                System.out.println(self.getId() + ": Sending request to " + dest.getId());
+                trigger(req, networkPort);
+            }
         }
     };
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
