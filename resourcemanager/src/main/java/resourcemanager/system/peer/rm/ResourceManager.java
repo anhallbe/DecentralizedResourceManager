@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +53,10 @@ public final class ResourceManager extends ComponentDefinition {
     // When you partition the index you need to find new nodes
     // This is a routing table maintaining a list of pairs in each partition.
     private Map<Integer, List<PeerDescriptor>> routingTable;
+    
+    private final int NPROBES = 1;
+    private Set<Probe.Response> probeResponses;
+    
     Comparator<PeerDescriptor> peerAgeComparator = new Comparator<PeerDescriptor>() {
         @Override
         public int compare(PeerDescriptor t, PeerDescriptor t1) {
@@ -72,6 +78,9 @@ public final class ResourceManager extends ComponentDefinition {
         subscribe(handleResourceAllocationRequest, networkPort);
         subscribe(handleResourceAllocationResponse, networkPort);
         subscribe(handleTManSample, tmanPort);
+        
+        subscribe(handleProbeRequest, networkPort);
+        subscribe(handleProbeResponse, networkPort);
     }
 	
     Handler<RmInit> handleInit = new Handler<RmInit>() {
@@ -88,7 +97,7 @@ public final class ResourceManager extends ComponentDefinition {
             rst.setTimeoutEvent(new UpdateTimeout(rst));
             trigger(rst, timerPort);
 
-
+            probeResponses = new TreeSet<Probe.Response>();
         }
     };
 
@@ -154,6 +163,9 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
 	
+    /**
+     * Request sent from higher layer (client, not another resource manager)
+     */
     Handler<RequestResource> handleRequestResource = new Handler<RequestResource>() {
         @Override
         public void handle(RequestResource event) {
@@ -164,6 +176,16 @@ public final class ResourceManager extends ComponentDefinition {
 //            RequestResources.Request req = new RequestResources.Request(self, dest,
 //            event.getNumCpus(), event.getAmountMem());
 //            trigger(req, networkPort);
+            if(neighbours.size() > 0) {
+                Address n1 = neighbours.get(random.nextInt(neighbours.size()));
+              //  Address n2 = neighbours.get(random.nextInt(neighbours.size()));
+                int pid = random.nextInt();
+                Probe.Request r1 = new Probe.Request(self, n1, pid);
+               // Probe.Request r2 = new Probe.Request(self, n2, pid);
+                trigger(r1, networkPort);
+               // trigger(r2, networkPort);
+                System.out.println("------Probes sent");
+            }
         }
     };
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
@@ -174,4 +196,37 @@ public final class ResourceManager extends ComponentDefinition {
     };
 
     //TODO: Add probes?
+    Handler<Probe.Request> handleProbeRequest = new Handler<Probe.Request>() {
+        @Override
+        public void handle(Probe.Request e) {
+            Probe.Response response = new Probe.Response(self, e.getSource(), e.getId(), availableResources.getNumFreeCpus(), availableResources.getFreeMemInMbs());
+            trigger(response, networkPort);
+            //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+    };
+    
+    Handler<Probe.Response> handleProbeResponse = new Handler<Probe.Response>() {
+        @Override
+        public void handle(Probe.Response e) {
+            System.out.println("Probe Response");
+            int id = e.getId();
+            probeResponses.add(e);
+            if(nProbeResponses(id) == NPROBES) {
+                // Send requests.
+                System.out.println("Received 2 Probe responses");
+            }
+            //Else not all probes have returned.
+            //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+    };
+    
+    private int nProbeResponses(int id) {
+        int n = 0;
+        System.out.println("Probe Request");
+        for(Probe.Response res : probeResponses) {
+            if(res.getId() == id)
+                n++;
+        }
+        return n;
+    }
 }
