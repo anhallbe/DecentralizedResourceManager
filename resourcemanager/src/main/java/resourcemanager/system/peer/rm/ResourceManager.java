@@ -52,10 +52,6 @@ public final class ResourceManager extends ComponentDefinition {
     // When you partition the index you need to find new nodes
     // This is a routing table maintaining a list of pairs in each partition.
     private Map<Integer, List<PeerDescriptor>> routingTable;
-    
-    private final int NPROBES = 2;
-    private ArrayList<RequestResources.ProbeResponse> probeResponses;
-    
     Comparator<PeerDescriptor> peerAgeComparator = new Comparator<PeerDescriptor>() {
         @Override
         public int compare(PeerDescriptor t, PeerDescriptor t1) {
@@ -192,35 +188,4 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
 
-    Handler<RequestResources.ProbeRequest> probeRequestHandler = new Handler<RequestResources.ProbeRequest>() {
-        @Override
-        public void handle(RequestResources.ProbeRequest e) {
-            int cpus = availableResources.getNumFreeCpus();
-            int mem = availableResources.getFreeMemInMbs();
-            RequestResources.ProbeResponse res = new RequestResources.ProbeResponse(self, e.getSource(), cpus, mem);
-            trigger(res, networkPort);
-        }
-    };
-    
-    Handler<RequestResources.ProbeResponse> probeResponseHandler = new Handler<RequestResources.ProbeResponse>() {
-        @Override
-        public void handle(RequestResources.ProbeResponse e) {
-            probeResponses.add(e);
-            
-            //If all probes have returned, pick the best node and request resources.
-            if(probeResponses.size() == NPROBES) {
-                RequestResources.ProbeResponse best = bestProbe(probeResponses);
-                //Great! Now what?? 
-                //Request resources from the best node of course!
-            }
-        }
-    };
-    
-    private RequestResources.ProbeResponse bestProbe(ArrayList<RequestResources.ProbeResponse> probes) {
-        RequestResources.ProbeResponse best = probes.get(0);
-        for(RequestResources.ProbeResponse probe : probes) {
-            //Utility = mem * cpus ??, find best
-        }
-        return best;
-    }
 }

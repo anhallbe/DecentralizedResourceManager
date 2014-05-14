@@ -56,31 +56,4 @@ public class RequestResources  {
             return destination;
         }
     }
-    
-    public static class ProbeRequest extends Message {
-        public ProbeRequest(Address source, Address destination, int numCpus, int amountMemInMb) {
-            super(source, destination);
-        }
-    }
-    
-    public static class ProbeResponse extends Message {
-
-        private final int numCpus;
-        private final int amountMemInMb;
-
-        public ProbeResponse(Address source, Address destination, int numCpus, int amountMemInMb) {
-            super(source, destination);
-            this.numCpus = numCpus;
-            this.amountMemInMb = amountMemInMb;
-        }
-
-        public int getAmountMemInMb() {
-            return amountMemInMb;
-        }
-
-        public int getNumCpus() {
-            return numCpus;
-        }
-
-    }
 }
