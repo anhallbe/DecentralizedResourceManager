@@ -114,12 +114,14 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResources.Request event) {
             // TODO 
+            //This is where resources should be allocated, also add some ID, send response (success/fail)
         }
     };
     Handler<RequestResources.Response> handleResourceAllocationResponse = new Handler<RequestResources.Response>() {
         @Override
         public void handle(RequestResources.Response event) {
             // TODO 
+            // Received response from some peer. How to handle fail/success?
         }
     };
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
@@ -171,4 +173,5 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
 
+    //TODO: Add probes?
 }
