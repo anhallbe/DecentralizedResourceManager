@@ -188,6 +188,7 @@ public final class ResourceManager extends ComponentDefinition {
             }
         }
     };
+    
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
         @Override
         public void handle(TManSample event) {
