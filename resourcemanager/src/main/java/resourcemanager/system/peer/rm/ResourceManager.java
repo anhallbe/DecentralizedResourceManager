@@ -58,6 +58,8 @@ public final class ResourceManager extends ComponentDefinition {
     private final int NPROBES = 1;
     private List<Probe.Response> probeResponses;
     private Queue<Task> workQueue;
+    private int MAX_CPU;
+    private int MAX_MEM;
     
     Comparator<PeerDescriptor> peerAgeComparator = new Comparator<PeerDescriptor>() {
         @Override
@@ -101,6 +103,8 @@ public final class ResourceManager extends ComponentDefinition {
 
             probeResponses = new ArrayList<Probe.Response>();
             workQueue = new LinkedList<Task>();
+            MAX_CPU = availableResources.getNumFreeCpus();
+            MAX_MEM = availableResources.getFreeMemInMbs();
         }
     };
 
@@ -127,6 +131,28 @@ public final class ResourceManager extends ComponentDefinition {
         public void handle(RequestResources.Request event) {
             // TODO 
             //This is where resources should be allocated, also add some ID, send response (success/fail)
+            int cpu = event.getNumCpus();
+            int mem = event.getAmountMemInMb();
+            int timeMS = event.getTimeMS();
+            
+            if(cpu > MAX_CPU || mem > MAX_MEM) {
+                //TODO Abort and respond FAILURE
+                System.out.println("RESOURCES NOT AVAILABLE");
+                trigger(new RequestResources.Response(self, event.getSource(), false), networkPort);
+                return;
+            }
+            
+            if(availableResources.isAvailable(cpu, mem)) {
+                availableResources.allocate(cpu, mem);
+                //TODO Add a timer event to notify us when the time has run out, and resources should be released.
+                System.out.println("Allocated " + cpu + " CPUs and " + mem + " MB memory.");
+            } else {
+                System.out.println("Not enough resources, adding to queue.");
+                workQueue.add(new Task(cpu, mem, timeMS));
+            }
+            
+            //TODO Should not be responding here, wait for the job to be finished instead!
+            trigger(new RequestResources.Response(self, event.getSource(), true), networkPort);
         }
     };
     Handler<RequestResources.Response> handleResourceAllocationResponse = new Handler<RequestResources.Response>() {
@@ -134,6 +160,11 @@ public final class ResourceManager extends ComponentDefinition {
         public void handle(RequestResources.Response event) {
             // TODO 
             // Received response from some peer. How to handle fail/success?
+            boolean success = event.getSuccess();
+            if(success)
+                System.out.println("Response: SUCCESS");
+            else
+                System.out.println("Response: FAILURE.....Now what?");
         }
     };
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
@@ -174,15 +205,11 @@ public final class ResourceManager extends ComponentDefinition {
         public void handle(RequestResource event) {
             
             System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
-            // TODO: Ask for resources from neighbours
-            // by sending a ResourceRequest
-//            RequestResources.Request req = new RequestResources.Request(self, dest,
-//            event.getNumCpus(), event.getAmountMem());
-//            trigger(req, networkPort);
             if(neighbours.size() > 0) {
+                //Send probes to NPROBES neighbours
+                UUID pid = new UUID(random.nextLong(), random.nextLong());
                 for(int i=0; i<NPROBES; i++) {
                     Address n1 = neighbours.get(random.nextInt(neighbours.size()));
-                    UUID pid = new UUID(random.nextLong(), random.nextLong());
                     Probe.Request r1 = new Probe.Request(self, n1, pid);
                     trigger(r1, networkPort);
                 }
@@ -216,6 +243,7 @@ public final class ResourceManager extends ComponentDefinition {
                 // Send requests.
                 System.out.println("Received 2 Probe responses");
                 System.out.println("Best response queue length: " + bestResponse(probeResponses, id).getQueue());
+                trigger(new RequestResources.Request(self, e.getSource(), 1, 1, 100), networkPort);     //TODO Add real cpu, mem, time
             }
             //Else not all probes have returned.
         }
