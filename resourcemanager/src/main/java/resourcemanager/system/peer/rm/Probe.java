@@ -6,51 +6,48 @@
 
 package resourcemanager.system.peer.rm;
 
-import common.peer.AvailableResources;
 import java.io.Serializable;
+import java.util.UUID;
 import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Message;
 
 /**
  *
  * @author Andreas
+ * TODO Use queue size instead of resource availability.
  */
 public class Probe {
     public static class Request extends Message implements Serializable {
         private static final long serialVersionUID = 123;
-        private int id;
+        private UUID id;
         
-        public Request(Address source, Address destination, int id) {
+        public Request(Address source, Address destination, UUID id) {
             super(source, destination);
             this.id = id;
         }
         
-        public int getId() {
+        public UUID getId() {
             return id;
         }
     }
     
     public static class Response extends Message implements Serializable {
         private static final long serialVersionUID = 321;
-        private int id, cpu, mem;   //mem in MB
+        private UUID id;
+        private int queueLength;
         
-        public Response(Address source, Address destination, int id, int cpu, int mem) {
+        public Response(Address source, Address destination, UUID id, int queueLength) {
             super(source, destination);
             this.id = id;
-            this.cpu = cpu;
-            this.mem = mem;
+            this.queueLength = queueLength;
         }
         
-        public int getId() {
+        public UUID getId() {
             return id;
         }
         
-        public int getCPU() {
-            return cpu;
-        }
-        
-        public int getMem() {
-            return mem;
+        public int getQueue() {
+            return queueLength;
         }
     }
 }

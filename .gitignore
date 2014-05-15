@@ -6,3 +6,5 @@ release.properties
 *.out
 *.out
 common/pom.xml
+resourcemanager/search.out
+resourcemanager/search.out

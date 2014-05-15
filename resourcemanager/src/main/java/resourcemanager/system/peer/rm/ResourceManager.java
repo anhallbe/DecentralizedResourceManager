@@ -10,11 +10,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,8 @@ public final class ResourceManager extends ComponentDefinition {
     private Map<Integer, List<PeerDescriptor>> routingTable;
     
     private final int NPROBES = 1;
-    private ArrayList<Probe.Response> probeResponses;
+    private List<Probe.Response> probeResponses;
+    private Queue<Task> workQueue;
     
     Comparator<PeerDescriptor> peerAgeComparator = new Comparator<PeerDescriptor>() {
         @Override
@@ -98,6 +100,7 @@ public final class ResourceManager extends ComponentDefinition {
             trigger(rst, timerPort);
 
             probeResponses = new ArrayList<Probe.Response>();
+            workQueue = new LinkedList<Task>();
         }
     };
 
@@ -177,13 +180,12 @@ public final class ResourceManager extends ComponentDefinition {
 //            event.getNumCpus(), event.getAmountMem());
 //            trigger(req, networkPort);
             if(neighbours.size() > 0) {
-                Address n1 = neighbours.get(random.nextInt(neighbours.size()));
-              //  Address n2 = neighbours.get(random.nextInt(neighbours.size()));
-                int pid = random.nextInt();
-                Probe.Request r1 = new Probe.Request(self, n1, pid);
-               // Probe.Request r2 = new Probe.Request(self, n2, pid);
-                trigger(r1, networkPort);
-               // trigger(r2, networkPort);
+                for(int i=0; i<NPROBES; i++) {
+                    Address n1 = neighbours.get(random.nextInt(neighbours.size()));
+                    UUID pid = new UUID(random.nextLong(), random.nextLong());
+                    Probe.Request r1 = new Probe.Request(self, n1, pid);
+                    trigger(r1, networkPort);
+                }
                 System.out.println("------Probes sent");
             }
         }
@@ -196,13 +198,11 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
 
-    //TODO: Add probes?
     Handler<Probe.Request> handleProbeRequest = new Handler<Probe.Request>() {
         @Override
         public void handle(Probe.Request e) {
-            Probe.Response response = new Probe.Response(self, e.getSource(), e.getId(), availableResources.getNumFreeCpus(), availableResources.getFreeMemInMbs());
+            Probe.Response response = new Probe.Response(self, e.getSource(), e.getId(), workQueue.size());
             trigger(response, networkPort);
-            //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     };
     
@@ -210,25 +210,41 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(Probe.Response e) {
             System.out.println("Probe Response");
-            int id = e.getId();
+            UUID id = e.getId();
             probeResponses.add(e);
             if(nProbeResponses(id) == NPROBES) {
                 // Send requests.
                 System.out.println("Received 2 Probe responses");
+                System.out.println("Best response queue length: " + bestResponse(probeResponses, id).getQueue());
             }
             //Else not all probes have returned.
-            //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     };
     
-    // TODO Deal with failing or non-responsive ResourceManagers. Timeouts, or something.
-    private int nProbeResponses(int id) {
+    /**
+     * Count the number of probe responses with a given ID
+     * @param id
+     * @return number of responses with id == id
+     */
+    private int nProbeResponses(UUID id) {
         int n = 0;
         System.out.println("Probe Request");
         for(Probe.Response res : probeResponses) {
-            if(res.getId() == id)
+            if(res.getId().equals(id))
                 n++;
         }
         return n;
+    }
+    
+    /**
+     * Go through the list of responses, and the probe with lowest queue length with ID = id
+     */
+    private Probe.Response bestResponse(List<Probe.Response> responses, UUID id) {
+        Probe.Response best = null;
+        for(Probe.Response res : responses) {
+            if(res.getId().equals(id) && (best == null || res.getQueue() < best.getQueue()))
+                best = res;
+        }
+        return best;
     }
 }
