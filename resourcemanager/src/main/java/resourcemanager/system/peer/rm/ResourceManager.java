@@ -55,7 +55,7 @@ public final class ResourceManager extends ComponentDefinition {
     private Map<Integer, List<PeerDescriptor>> routingTable;
     
     private final int NPROBES = 1;
-    private Set<Probe.Response> probeResponses;
+    private ArrayList<Probe.Response> probeResponses;
     
     Comparator<PeerDescriptor> peerAgeComparator = new Comparator<PeerDescriptor>() {
         @Override
@@ -97,7 +97,7 @@ public final class ResourceManager extends ComponentDefinition {
             rst.setTimeoutEvent(new UpdateTimeout(rst));
             trigger(rst, timerPort);
 
-            probeResponses = new TreeSet<Probe.Response>();
+            probeResponses = new ArrayList<Probe.Response>();
         }
     };
 
@@ -221,6 +221,7 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
     
+    // TODO Deal with failing or non-responsive ResourceManagers. Timeouts, or something.
     private int nProbeResponses(int id) {
         int n = 0;
         System.out.println("Probe Request");
