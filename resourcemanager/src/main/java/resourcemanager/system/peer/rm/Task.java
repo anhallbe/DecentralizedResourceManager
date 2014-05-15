@@ -8,6 +8,7 @@ package resourcemanager.system.peer.rm;
 
 /**
  * A wrapper of a task, which essentially describes the needed resources for a task.
+ * Contains same info as RequestResources.Request?
  * @author Andreas
  */
 public class Task {
