@@ -7,6 +7,7 @@
 package resourcemanager.system.peer.rm;
 
 import common.peer.AvailableResources;
+import java.io.Serializable;
 import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Message;
 
@@ -15,7 +16,8 @@ import se.sics.kompics.network.Message;
  * @author Andreas
  */
 public class Probe {
-    public static class Request extends Message {
+    public static class Request extends Message implements Serializable {
+        private static final long serialVersionUID = 123;
         private int id;
         
         public Request(Address source, Address destination, int id) {
@@ -28,7 +30,8 @@ public class Probe {
         }
     }
     
-    public static class Response extends Message {
+    public static class Response extends Message implements Serializable {
+        private static final long serialVersionUID = 321;
         private int id, cpu, mem;   //mem in MB
         
         public Response(Address source, Address destination, int id, int cpu, int mem) {
