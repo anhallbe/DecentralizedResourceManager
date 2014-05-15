@@ -5,3 +5,4 @@ pom.xml.next
 release.properties
 *.out
 *.out
+common/pom.xml
