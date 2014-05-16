@@ -26,6 +26,7 @@ import se.sics.kompics.Positive;
 import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.timer.SchedulePeriodicTimeout;
+import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timer;
 import se.sics.kompics.web.Web;
 import system.peer.RmPort;
@@ -85,6 +86,7 @@ public final class ResourceManager extends ComponentDefinition {
         
         subscribe(handleProbeRequest, networkPort);
         subscribe(handleProbeResponse, networkPort);
+        subscribe(handleResourceAllocationTimeout, timerPort);
     }
 	
     Handler<RmInit> handleInit = new Handler<RmInit>() {
@@ -125,6 +127,18 @@ public final class ResourceManager extends ComponentDefinition {
         }
     };
 
+    /**
+     * This event is received when a task is done and resources need to be released.
+     */
+    Handler<ResourceAllocationTimeout> handleResourceAllocationTimeout = new Handler<ResourceAllocationTimeout>() {
+        @Override
+        public void handle(ResourceAllocationTimeout e) {
+            int cpu = e.getAllocatedCPU();
+            int mem = e.getAllocatedMem();
+            availableResources.release(cpu, mem);
+            System.out.println("Released " + cpu + " CPU and " + mem + " MB memory.");
+        }
+    };
 
     Handler<RequestResources.Request> handleResourceAllocationRequest = new Handler<RequestResources.Request>() {
         @Override
@@ -146,6 +160,9 @@ public final class ResourceManager extends ComponentDefinition {
                 availableResources.allocate(cpu, mem);
                 //TODO Add a timer event to notify us when the time has run out, and resources should be released.
                 System.out.println("Allocated " + cpu + " CPUs and " + mem + " MB memory.");
+                ScheduleTimeout t = new ScheduleTimeout(timeMS);
+                t.setTimeoutEvent(new ResourceAllocationTimeout(t, cpu, mem));
+                trigger(t, timerPort);
             } else {
                 System.out.println("Not enough resources, adding to queue.");
                 workQueue.add(new Task(cpu, mem, timeMS));
@@ -203,18 +220,30 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<RequestResource> handleRequestResource = new Handler<RequestResource>() {
         @Override
         public void handle(RequestResource event) {
+            int rCpu = event.getNumCpus();
+            int rMem = event.getMemoryInMbs();
+            int rTime = event.getTimeToHoldResource();
+            int myCpu = availableResources.getNumFreeCpus();
+            int myMem = availableResources.getFreeMemInMbs();
             
-            System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
-            if(neighbours.size() > 0) {
-                //Send probes to NPROBES neighbours
-                UUID pid = new UUID(random.nextLong(), random.nextLong());
-                for(int i=0; i<NPROBES; i++) {
-                    Address n1 = neighbours.get(random.nextInt(neighbours.size()));
-                    Probe.Request r1 = new Probe.Request(self, n1, pid);
-                    trigger(r1, networkPort);
+            //If the requested resources are available on this machine, there's no need to ask other peers. Just allocate them here!
+            if(rCpu <= myCpu && rMem <= myMem) {
+                System.out.println("The requested resources are available on this node, don't bother with asking other peers.");
+                trigger(new RequestResources.Request(self, self, rCpu, rMem, rTime), networkPort);
+            } else {
+                System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
+                if(neighbours.size() > 0) {
+                    //Send probes to NPROBES neighbours
+                    UUID pid = new UUID(random.nextLong(), random.nextLong());
+                    for(int i=0; i<NPROBES; i++) {
+                        Address n1 = neighbours.get(random.nextInt(neighbours.size()));
+                        Probe.Request r1 = new Probe.Request(self, n1, pid);
+                        trigger(r1, networkPort);
+                    }
+                    System.out.println("------Probes sent");
                 }
-                System.out.println("------Probes sent");
             }
+            
         }
     };
     
