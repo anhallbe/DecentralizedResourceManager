@@ -8,3 +8,4 @@ release.properties
 common/pom.xml
 resourcemanager/search.out
 resourcemanager/search.out
+*.out

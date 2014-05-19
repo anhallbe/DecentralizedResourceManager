@@ -19,7 +19,8 @@ public class Scenario1 extends Scenario {
 			raise(100, Operations.requestResources(), 
                                 uniform(0, Integer.MAX_VALUE),
                                 constant(2), constant(2000),
-                                constant(1000*60*1) // 1 minute
+                                //constant(1000*60*1) // 1 minute
+                                constant(1000)
                                 );
 		}};
                 

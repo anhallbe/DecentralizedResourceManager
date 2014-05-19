@@ -137,6 +137,18 @@ public final class ResourceManager extends ComponentDefinition {
             int mem = e.getAllocatedMem();
             availableResources.release(cpu, mem);
             System.out.println("Released " + cpu + " CPU and " + mem + " MB memory.");
+            
+            //Take a new task from queue, try to allocate resources for it.
+            Task nextTask = workQueue.peek();
+            if(nextTask != null && availableResources.isAvailable(nextTask.getCpus(), nextTask.getMem())) {
+                workQueue.remove();
+                availableResources.allocate(nextTask.getCpus(), nextTask.getMem());
+                ScheduleTimeout t = new ScheduleTimeout(nextTask.getMilliseconds());
+                t.setTimeoutEvent(new ResourceAllocationTimeout(t, nextTask.getCpus(), nextTask.getMem()));
+                trigger(t, timerPort);
+                System.out.println("Polled a task from queue and allocating resources.");
+            } else
+                System.out.println("NOTHING IN QUEUE");
         }
     };
 
@@ -231,7 +243,7 @@ public final class ResourceManager extends ComponentDefinition {
                 System.out.println("The requested resources are available on this node, don't bother with asking other peers.");
                 trigger(new RequestResources.Request(self, self, rCpu, rMem, rTime), networkPort);
             } else {
-                System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs());
+                System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs() + " + " + event.getTimeToHoldResource());
                 if(neighbours.size() > 0) {
                     //Send probes to NPROBES neighbours
                     UUID pid = new UUID(random.nextLong(), random.nextLong());
