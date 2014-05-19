@@ -58,9 +58,10 @@ public final class ResourceManager extends ComponentDefinition {
     
     private final int NPROBES = 1;
     private List<Probe.Response> probeResponses;
-    private Queue<Task> workQueue;
+    private Queue<Task> workQueue;      //This queue contains tasks that need to be performed on this node.
     private int MAX_CPU;
     private int MAX_MEM;
+    private Queue<Task> pendingJobs;    //This queue is for tasks that have not been scheduled yet.
     
     Comparator<PeerDescriptor> peerAgeComparator = new Comparator<PeerDescriptor>() {
         @Override
@@ -107,6 +108,7 @@ public final class ResourceManager extends ComponentDefinition {
             workQueue = new LinkedList<Task>();
             MAX_CPU = availableResources.getNumFreeCpus();
             MAX_MEM = availableResources.getFreeMemInMbs();
+            pendingJobs = new LinkedList<Task>();
         }
     };
 
@@ -235,16 +237,17 @@ public final class ResourceManager extends ComponentDefinition {
             int rCpu = event.getNumCpus();
             int rMem = event.getMemoryInMbs();
             int rTime = event.getTimeToHoldResource();
-            int myCpu = availableResources.getNumFreeCpus();
-            int myMem = availableResources.getFreeMemInMbs();
+//            int myCpu = availableResources.getNumFreeCpus();
+//            int myMem = availableResources.getFreeMemInMbs();
             
             //If the requested resources are available on this machine, there's no need to ask other peers. Just allocate them here!
-            if(rCpu <= myCpu && rMem <= myMem) {
-                System.out.println("The requested resources are available on this node, don't bother with asking other peers.");
-                trigger(new RequestResources.Request(self, self, rCpu, rMem, rTime), networkPort);
-            } else {
+//            if(rCpu <= myCpu && rMem <= myMem) {
+//                System.out.println("The requested resources are available on this node, don't bother with asking other peers.");
+//                trigger(new RequestResources.Request(self, self, rCpu, rMem, rTime), networkPort);
+//            } else {
                 System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs() + " + " + event.getTimeToHoldResource());
                 if(neighbours.size() > 0) {
+                    pendingJobs.add(new Task(rCpu, rMem, rTime));
                     //Send probes to NPROBES neighbours
                     UUID pid = new UUID(random.nextLong(), random.nextLong());
                     for(int i=0; i<NPROBES; i++) {
@@ -254,7 +257,7 @@ public final class ResourceManager extends ComponentDefinition {
                     }
                     System.out.println("------Probes sent");
                 }
-            }
+//            }
             
         }
     };
@@ -284,7 +287,8 @@ public final class ResourceManager extends ComponentDefinition {
                 // Send requests.
                 System.out.println("Received 2 Probe responses");
                 System.out.println("Best response queue length: " + bestResponse(probeResponses, id).getQueue());
-                trigger(new RequestResources.Request(self, e.getSource(), 1, 1, 100), networkPort);     //TODO Add real cpu, mem, time
+                Task job = pendingJobs.poll();
+                trigger(new RequestResources.Request(self, e.getSource(), job.getCpus(), job.getMem(), job.getMilliseconds()), networkPort);     //TODO Add real cpu, mem, time
             }
             //Else not all probes have returned.
         }

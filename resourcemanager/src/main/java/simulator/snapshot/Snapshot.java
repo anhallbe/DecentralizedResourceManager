@@ -39,13 +39,15 @@ public class Snapshot {
         peerInfo.setNeighbours(partners);
     }
 
-
+    /**
+     * TODO: Make an additional report with data that can be plotted, for analysis.
+     */
     public static void report() {
         String str = new String();
         str += "current time: " + counter++ + "\n";
         str += reportNetworkState();
         str += reportDetails();
-        str += "###\n";
+        str += "##################################################################\n\n";
 
         System.out.println(str);
         FileIO.append(str, FILENAME);
@@ -63,21 +65,21 @@ public class Snapshot {
 
     private static String reportDetails() {
         String str = "---\n";
-        int minFreeCpus = 0;
-        int maxFreeCpus = Integer.MAX_VALUE;
-        int minFreeMemInMb = 0;
-        int maxFreeMemInMb = Integer.MAX_VALUE;
+        int minFreeCpus = Integer.MAX_VALUE;
+        int maxFreeCpus = 0;
+        int minFreeMemInMb = Integer.MAX_VALUE;
+        int maxFreeMemInMb = 0;
         for (PeerInfo p : peers.values()) {
-            if (p.getNumFreeCpus() < maxFreeCpus) {
+            if (p.getNumFreeCpus() > maxFreeCpus) {
                 maxFreeCpus = p.getNumFreeCpus();
             }
-            if (p.getNumFreeCpus() > minFreeCpus) {
+            if (p.getNumFreeCpus() < minFreeCpus) {
                 minFreeCpus = p.getNumFreeCpus();
             }
-            if (p.getFreeMemInMbs() < maxFreeMemInMb) {
+            if (p.getFreeMemInMbs() > maxFreeMemInMb) {
                 maxFreeMemInMb = p.getFreeMemInMbs();
             }
-            if (p.getFreeMemInMbs() > minFreeMemInMb) {
+            if (p.getFreeMemInMbs() < minFreeMemInMb) {
                 minFreeMemInMb = p.getFreeMemInMbs();
             }
         }
@@ -85,6 +87,11 @@ public class Snapshot {
         str += "Peer with min num of free cpus: " + minFreeCpus + "\n";
         str += "Peer with max amount of free mem in MB: " + maxFreeMemInMb + "\n";
         str += "Peer with min amount of free mem in MB: " + minFreeMemInMb + "\n";
+        
+        str += "Peers:\n";
+        for(PeerInfo p : peers.values()) {
+            str += "\t" + p.getNumFreeCpus() + " cpu, " + p.getFreeMemInMbs() + " mem.\n";
+        }
 
         return str;
     }
