@@ -12,15 +12,16 @@ package resourcemanager.system.peer.rm;
  * @author Andreas
  */
 public class Task {
-    private int cpus;
-    private int mem;
-    private int milliseconds;
-    private long id;
+    final private int cpus;
+    final private int mem;
+    final private int milliseconds;
+    final private long id;
 
     public Task(int cpus, int mem, int milliseconds, long id) {
         this.cpus = cpus;
         this.mem = mem;
         this.milliseconds = milliseconds;
+        this.id = id;
     }
 
     public int getCpus() {
