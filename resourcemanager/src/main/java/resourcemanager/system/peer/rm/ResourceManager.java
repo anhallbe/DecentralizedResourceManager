@@ -28,6 +28,7 @@ import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timer;
 import se.sics.kompics.web.Web;
+import simulator.snapshot.FileIO;
 import system.peer.RmPort;
 import tman.system.peer.tman.TManSample;
 import tman.system.peer.tman.TManSamplePort;
@@ -145,6 +146,9 @@ public final class ResourceManager extends ComponentDefinition {
                 workQueue.remove();
                 availableResources.allocate(nextTask.getCpus(), nextTask.getMem());
                 System.out.println("Task id " + nextTask.getId() + " allocated.");
+                logger.info("end\t" + nextTask.getId());
+                FileIO.append(System.currentTimeMillis() + "\tend\t" + nextTask.getId() + "\n", "asd.log");
+                
                 ScheduleTimeout t = new ScheduleTimeout(nextTask.getMilliseconds());
                 t.setTimeoutEvent(new ResourceAllocationTimeout(t, nextTask.getCpus(), nextTask.getMem()));
                 trigger(t, timerPort);
@@ -172,6 +176,9 @@ public final class ResourceManager extends ComponentDefinition {
             
             if(availableResources.isAvailable(cpu, mem)) {
                 System.out.println("Task id " + event.getId() + " allocated.");
+                logger.info("end\t" + event.getId());
+                FileIO.append(System.currentTimeMillis() + "\tend\t" + event.getId() + "\n", "asd.log");
+                
                 availableResources.allocate(cpu, mem);
                 //TODO Add a timer event to notify us when the time has run out, and resources should be released.
                 //Fixed
@@ -238,6 +245,9 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(RequestResource event) {
             System.out.println("Request with id " + event.getId() + " received.");
+            logger.info("start\t" + event.getId());
+            FileIO.append(System.currentTimeMillis() + "\tstart\t" + event.getId() + "\n", "asd.log");
+
             int rCpu = event.getNumCpus();
             int rMem = event.getMemoryInMbs();
             int rTime = event.getTimeToHoldResource();
