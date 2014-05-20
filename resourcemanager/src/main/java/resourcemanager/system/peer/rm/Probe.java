@@ -18,7 +18,8 @@ import se.sics.kompics.network.Message;
  */
 public class Probe {
     public static class Request extends Message implements Serializable {
-        private static final long serialVersionUID = 123;
+        private static final long serialVersionUID = 6778950069751417666L;
+        //private static final long serialVersionUID = 123;
         private UUID id;
         
         public Request(Address source, Address destination, UUID id) {
@@ -32,7 +33,8 @@ public class Probe {
     }
     
     public static class Response extends Message implements Serializable {
-        private static final long serialVersionUID = 321;
+        private static final long serialVersionUID = 6566343625721530642L;
+       // private static final long serialVersionUID = 321;
         private UUID id;
         private int queueLength;
         
