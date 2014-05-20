@@ -7,7 +7,6 @@
 package resourcemanager.system.peer.rm;
 
 import java.io.Serializable;
-import java.util.UUID;
 import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Message;
 
@@ -20,14 +19,14 @@ public class Probe {
     public static class Request extends Message implements Serializable {
         private static final long serialVersionUID = 6778950069751417666L;
         //private static final long serialVersionUID = 123;
-        private UUID id;
+        private long id;
         
-        public Request(Address source, Address destination, UUID id) {
+        public Request(Address source, Address destination, long id) {
             super(source, destination);
             this.id = id;
         }
         
-        public UUID getId() {
+        public long getId() {
             return id;
         }
     }
@@ -35,16 +34,16 @@ public class Probe {
     public static class Response extends Message implements Serializable {
         private static final long serialVersionUID = 6566343625721530642L;
        // private static final long serialVersionUID = 321;
-        private UUID id;
+        private long id;
         private int queueLength;
         
-        public Response(Address source, Address destination, UUID id, int queueLength) {
+        public Response(Address source, Address destination, long id, int queueLength) {
             super(source, destination);
             this.id = id;
             this.queueLength = queueLength;
         }
         
-        public UUID getId() {
+        public long getId() {
             return id;
         }
         

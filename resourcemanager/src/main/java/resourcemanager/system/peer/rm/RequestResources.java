@@ -16,12 +16,14 @@ public class RequestResources  {
         private final int numCpus;
         private final int amountMemInMb;
         private final int ms;
+        private final long id;
 
-        public Request(Address source, Address destination, int numCpus, int amountMemInMb, int ms) {
+        public Request(Address source, Address destination, int numCpus, int amountMemInMb, int ms, long id) {
             super(source, destination);
             this.numCpus = numCpus;
             this.amountMemInMb = amountMemInMb;
             this.ms = ms;
+            this.id = id;
         }
 
         public int getAmountMemInMb() {
@@ -35,18 +37,29 @@ public class RequestResources  {
         public int getTimeMS() {
             return ms;
         }
+
+        public long getId() {
+            return id;
+        }
     }
     
     public static class Response extends Message {
 
         private final boolean success;
-        public Response(Address source, Address destination, boolean success) {
+        private final long id;
+        
+        public Response(Address source, Address destination, boolean success, long id) {
             super(source, destination);
             this.success = success;
+            this.id = id;
         }
         
         public boolean getSuccess() {
             return success;
+        }
+
+        public long getId() {
+            return id;
         }
     }
     
