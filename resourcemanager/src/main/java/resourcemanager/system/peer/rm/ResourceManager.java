@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,19 +137,20 @@ public final class ResourceManager extends ComponentDefinition {
             int cpu = e.getAllocatedCPU();
             int mem = e.getAllocatedMem();
             availableResources.release(cpu, mem);
-            System.out.println("Released " + cpu + " CPU and " + mem + " MB memory.");
+            //System.out.println("Released " + cpu + " CPU and " + mem + " MB memory.");
             
             //Take a new task from queue, try to allocate resources for it.
             Task nextTask = workQueue.peek();
             if(nextTask != null && availableResources.isAvailable(nextTask.getCpus(), nextTask.getMem())) {
                 workQueue.remove();
                 availableResources.allocate(nextTask.getCpus(), nextTask.getMem());
+                System.out.println("Task id " + nextTask.getId() + " allocated.");
                 ScheduleTimeout t = new ScheduleTimeout(nextTask.getMilliseconds());
                 t.setTimeoutEvent(new ResourceAllocationTimeout(t, nextTask.getCpus(), nextTask.getMem()));
                 trigger(t, timerPort);
-                System.out.println("Polled a task from queue and allocating resources.");
-            } else
-                System.out.println("NOTHING IN QUEUE");
+                //System.out.println("Polled a task from queue and allocating resources.");
+            } //else
+                //System.out.println("NOTHING IN QUEUE");
         }
     };
 
@@ -166,26 +166,27 @@ public final class ResourceManager extends ComponentDefinition {
             if(cpu > MAX_CPU || mem > MAX_MEM) {
                 //TODO Abort and respond FAILURE    //Fixed
                 System.out.println("RESOURCES NOT AVAILABLE");
-                trigger(new RequestResources.Response(self, event.getSource(), false), networkPort);
+                trigger(new RequestResources.Response(self, event.getSource(), false, event.getId()), networkPort);
                 return;
             }
             
             if(availableResources.isAvailable(cpu, mem)) {
+                System.out.println("Task id " + event.getId() + " allocated.");
                 availableResources.allocate(cpu, mem);
                 //TODO Add a timer event to notify us when the time has run out, and resources should be released.
                 //Fixed
-                System.out.println("Allocated " + cpu + " CPUs and " + mem + " MB memory.");
+                //System.out.println("Allocated " + cpu + " CPUs and " + mem + " MB memory.");
                 ScheduleTimeout t = new ScheduleTimeout(timeMS);
                 t.setTimeoutEvent(new ResourceAllocationTimeout(t, cpu, mem));
                 trigger(t, timerPort);
             } else {
-                System.out.println("Not enough resources, adding to queue.");
-                workQueue.add(new Task(cpu, mem, timeMS));
+                //System.out.println("Not enough resources, adding to queue.");
+                workQueue.add(new Task(cpu, mem, timeMS, event.getId()));
             }
             
             //TODO Should not be responding here, wait for the job to be finished instead?
             //Or wait for the resources to be allocated... To measure performance
-            trigger(new RequestResources.Response(self, event.getSource(), true), networkPort);
+            trigger(new RequestResources.Response(self, event.getSource(), true, event.getId()), networkPort);
         }
     };
     Handler<RequestResources.Response> handleResourceAllocationResponse = new Handler<RequestResources.Response>() {
@@ -203,7 +204,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {
-            System.out.println("Received samples: " + event.getSample().size());
+            //System.out.println("Received samples: " + event.getSample().size());
             
             // receive a new list of neighbours
             neighbours.clear();
@@ -236,6 +237,7 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<RequestResource> handleRequestResource = new Handler<RequestResource>() {
         @Override
         public void handle(RequestResource event) {
+            System.out.println("Request with id " + event.getId() + " received.");
             int rCpu = event.getNumCpus();
             int rMem = event.getMemoryInMbs();
             int rTime = event.getTimeToHoldResource();
@@ -248,17 +250,18 @@ public final class ResourceManager extends ComponentDefinition {
 //                System.out.println("The requested resources are available on this node, don't bother with asking other peers.");
 //                trigger(new RequestResources.Request(self, self, rCpu, rMem, rTime), networkPort);
 //            } else {
-                System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs() + " + " + event.getTimeToHoldResource());
+                //System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs() + " + " + event.getTimeToHoldResource());
                 if(neighbours.size() > 0) {
-                    pendingJobs.add(new Task(rCpu, rMem, rTime));
+                    pendingJobs.add(new Task(rCpu, rMem, rTime, event.getId()));
                     //Send probes to NPROBES neighbours
-                    UUID pid = new UUID(random.nextLong(), random.nextLong());
+                    //UUID pid = new UUID(random.nextLong(), random.nextLong());
+                    long pid = event.getId();
                     for(int i=0; i<NPROBES; i++) {
                         Address n1 = neighbours.get(random.nextInt(neighbours.size()));
                         Probe.Request r1 = new Probe.Request(self, n1, pid);
                         trigger(r1, networkPort);
                     }
-                    System.out.println("------Probes sent");
+                    //System.out.println("------Probes sent");
                 }
 //            }
             
@@ -283,15 +286,16 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<Probe.Response> handleProbeResponse = new Handler<Probe.Response>() {
         @Override
         public void handle(Probe.Response e) {
-            System.out.println("Probe Response");
-            UUID id = e.getId();
+            //System.out.println("Probe Response");
+            //UUID id = e.getId();
+            long id = e.getId();
             probeResponses.add(e);
             if(nProbeResponses(id) == NPROBES) {
                 // Send requests.
-                System.out.println("Received " + NPROBES + " Probe responses");
-                System.out.println("Best response queue length: " + bestResponse(probeResponses, id).getQueue());
+                //System.out.println("Received " + NPROBES + " Probe responses");
+                //System.out.println("Best response queue length: " + bestResponse(probeResponses, id).getQueue());
                 Task job = pendingJobs.poll();
-                trigger(new RequestResources.Request(self, e.getSource(), job.getCpus(), job.getMem(), job.getMilliseconds()), networkPort);     //TODO Add real cpu, mem, time
+                trigger(new RequestResources.Request(self, e.getSource(), job.getCpus(), job.getMem(), job.getMilliseconds(), id), networkPort);     //TODO Add real cpu, mem, time
             }
             //Else not all probes have returned.
         }
@@ -302,11 +306,11 @@ public final class ResourceManager extends ComponentDefinition {
      * @param id
      * @return number of responses with id == id
      */
-    private int nProbeResponses(UUID id) {
+    private int nProbeResponses(long id) {
         int n = 0;
-        System.out.println("Probe Request");
+        //System.out.println("Probe Request");
         for(Probe.Response res : probeResponses) {
-            if(res.getId().equals(id))
+            if(res.getId() == id)
                 n++;
         }
         return n;
@@ -315,10 +319,10 @@ public final class ResourceManager extends ComponentDefinition {
     /**
      * Go through the list of responses, and the probe with lowest queue length with ID = id
      */
-    private Probe.Response bestResponse(List<Probe.Response> responses, UUID id) {
+    private Probe.Response bestResponse(List<Probe.Response> responses, long id) {
         Probe.Response best = null;
         for(Probe.Response res : responses) {
-            if(res.getId().equals(id) && (best == null || res.getQueue() < best.getQueue()))
+            if(res.getId() == id && (best == null || res.getQueue() < best.getQueue()))
                 best = res;
         }
         return best;
