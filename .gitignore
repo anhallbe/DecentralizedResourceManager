@@ -9,3 +9,6 @@ common/pom.xml
 resourcemanager/search.out
 resourcemanager/search.out
 *.out
+*.pyc
+*.log
+*.out
