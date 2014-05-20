@@ -56,7 +56,7 @@ public final class ResourceManager extends ComponentDefinition {
     // This is a routing table maintaining a list of pairs in each partition.
     private Map<Integer, List<PeerDescriptor>> routingTable;
     
-    private final int NPROBES = 1;
+    private final int NPROBES = 2;
     private List<Probe.Response> probeResponses;
     private Queue<Task> workQueue;      //This queue contains tasks that need to be performed on this node.
     private int MAX_CPU;
@@ -164,7 +164,7 @@ public final class ResourceManager extends ComponentDefinition {
             int timeMS = event.getTimeMS();
             
             if(cpu > MAX_CPU || mem > MAX_MEM) {
-                //TODO Abort and respond FAILURE
+                //TODO Abort and respond FAILURE    //Fixed
                 System.out.println("RESOURCES NOT AVAILABLE");
                 trigger(new RequestResources.Response(self, event.getSource(), false), networkPort);
                 return;
@@ -173,6 +173,7 @@ public final class ResourceManager extends ComponentDefinition {
             if(availableResources.isAvailable(cpu, mem)) {
                 availableResources.allocate(cpu, mem);
                 //TODO Add a timer event to notify us when the time has run out, and resources should be released.
+                //Fixed
                 System.out.println("Allocated " + cpu + " CPUs and " + mem + " MB memory.");
                 ScheduleTimeout t = new ScheduleTimeout(timeMS);
                 t.setTimeoutEvent(new ResourceAllocationTimeout(t, cpu, mem));
@@ -182,7 +183,8 @@ public final class ResourceManager extends ComponentDefinition {
                 workQueue.add(new Task(cpu, mem, timeMS));
             }
             
-            //TODO Should not be responding here, wait for the job to be finished instead!
+            //TODO Should not be responding here, wait for the job to be finished instead?
+            //Or wait for the resources to be allocated... To measure performance
             trigger(new RequestResources.Response(self, event.getSource(), true), networkPort);
         }
     };
@@ -241,6 +243,7 @@ public final class ResourceManager extends ComponentDefinition {
 //            int myMem = availableResources.getFreeMemInMbs();
             
             //If the requested resources are available on this machine, there's no need to ask other peers. Just allocate them here!
+            //Rev: On second thought, maybe it will be better for load balance to distribute work anyway...
 //            if(rCpu <= myCpu && rMem <= myMem) {
 //                System.out.println("The requested resources are available on this node, don't bother with asking other peers.");
 //                trigger(new RequestResources.Request(self, self, rCpu, rMem, rTime), networkPort);
@@ -285,7 +288,7 @@ public final class ResourceManager extends ComponentDefinition {
             probeResponses.add(e);
             if(nProbeResponses(id) == NPROBES) {
                 // Send requests.
-                System.out.println("Received 2 Probe responses");
+                System.out.println("Received " + NPROBES + " Probe responses");
                 System.out.println("Best response queue length: " + bestResponse(probeResponses, id).getQueue());
                 Task job = pendingJobs.poll();
                 trigger(new RequestResources.Request(self, e.getSource(), job.getCpus(), job.getMem(), job.getMilliseconds()), networkPort);     //TODO Add real cpu, mem, time
