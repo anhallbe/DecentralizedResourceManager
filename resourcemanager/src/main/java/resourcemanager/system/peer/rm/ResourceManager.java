@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +62,8 @@ public final class ResourceManager extends ComponentDefinition {
     private Queue<Task> pendingTasks;      //This queue contains tasks that need to be performed on this node.
     private int MAX_CPU;
     private int MAX_MEM;
-    private Queue<Task> pendingJobs;    //This queue is for tasks that have not been scheduled yet.
+//    private Queue<Task> pendingJobs;    //This queue is for tasks that have not been scheduled yet.
+    private Map<Long, RequestResource> pendingRequests;
     
     Comparator<PeerDescriptor> peerAgeComparator = new Comparator<PeerDescriptor>() {
         @Override
@@ -108,7 +110,9 @@ public final class ResourceManager extends ComponentDefinition {
             pendingTasks = new LinkedList<Task>();
             MAX_CPU = availableResources.getNumFreeCpus();
             MAX_MEM = availableResources.getFreeMemInMbs();
-            pendingJobs = new LinkedList<Task>();
+//            pendingJobs = new LinkedList<Task>();
+            
+            pendingRequests = new LinkedHashMap<Long, RequestResource>();
         }
     };
 
@@ -146,29 +150,26 @@ public final class ResourceManager extends ComponentDefinition {
             int rMem = event.getMemoryInMbs();
             int rTime = event.getTimeToHoldResource();
             long jobID = event.getId();
-            int machines = 5;  //event.getMachines()
+            int machines = event.getMachines();  //event.getMachines()
 //            int myCpu = availableResources.getNumFreeCpus();
 //            int myMem = availableResources.getFreeMemInMbs();
             
             //If the requested resources are available on this machine, there's no need to ask other peers. Just allocate them here!
             //Rev: On second thought, maybe it will be better for load balance to distribute work anyway...
-//            if(rCpu <= myCpu && rMem <= myMem) {
+//            if(rCpu <= myCpu && rMem <= myMem)S {
 //                System.out.println("The requested resources are available on this node, don't bother with asking other peers.");
 //                trigger(new RequestResources.Request(self, self, rCpu, rMem, rTime), networkPort);
 //            } else {
                 //System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs() + " + " + event.getTimeToHoldResource());
-                if(neighbours.size() > 0) {
-                    pendingJobs.add(new Task(rCpu, rMem, rTime, jobID));
-                    //Send probes to NPROBES neighbours
-                    //UUID pid = new UUID(random.nextLong(), random.nextLong());
-//                    long pid = event.getId();
-                    for(int i=0; i<NPROBES; i++) {
-                        Address n1 = neighbours.get(random.nextInt(neighbours.size()));
-                        Probe.Request r1 = new Probe.Request(self, n1, jobID);
-                        trigger(r1, networkPort);
-                    }
-                    //System.out.println("------Probes sent");
+            pendingRequests.put(jobID, event);
+            if(neighbours.size() > 0) {
+                for(int j=0; j<NPROBES*machines; j++) {
+                    Address n1 = neighbours.get(random.nextInt(neighbours.size()));
+                    Probe.Request r1 = new Probe.Request(self, n1, jobID);
+                    trigger(r1, networkPort);
                 }
+                //System.out.println("------Probes sent");
+            }
 //            }
             
         }
@@ -190,13 +191,18 @@ public final class ResourceManager extends ComponentDefinition {
             //UUID id = e.getId();
             long id = e.getId();
             probeResponses.add(e);
-            if(nProbeResponses(id) == NPROBES) {
+            int machines = pendingRequests.get(id).getMachines();
+            if(nProbeResponses(id) == NPROBES*machines) {
                 // Send requests.
                 //System.out.println("Received " + NPROBES + " Probe responses");
                 //System.out.println("Best response queue length: " + bestResponse(probeResponses, id).getQueue());
-                Probe.Response best = bestResponses(probeResponses, id, 1).get(0);
-                Task job = pendingJobs.poll();
-                trigger(new RequestResources.Request(self, best.getSource(), job.getCpus(), job.getMem(), job.getMilliseconds(), id), networkPort);     //TODO Add real cpu, mem, time
+//                Probe.Response best = bestResponses(probeResponses, id, machines).get(0);
+//                Task job = pendingJobs.poll();
+//                trigger(new RequestResources.Request(self, best.getSource(), job.getCpus(), job.getMem(), job.getMilliseconds(), id), networkPort);     //TODO Add real cpu, mem, time
+                RequestResource r = pendingRequests.get(id);    //TODO, remove later, otherwise memory leak
+                for(Probe.Response res : bestResponses(probeResponses, id, machines)) {
+                    trigger(new RequestResources.Request(self, res.getSource(), r.getNumCpus(), r.getMemoryInMbs(), r.getTimeToHoldResource(), id), networkPort);
+                }
             }
             //Else not all probes have returned.
         }
@@ -292,9 +298,9 @@ public final class ResourceManager extends ComponentDefinition {
             neighbours.clear();
             neighbours.addAll(event.getSample());
             
-            logger.info(self.getId() + ": Neighbors:");
-            for(Address n : neighbours)
-                logger.info("\t" + n.getId());
+//            logger.info(self.getId() + ": Neighbors:");
+//            for(Address n : neighbours)
+//                logger.info("\t" + n.getId());
 
             // update routing tables
             for (Address p : neighbours) {
