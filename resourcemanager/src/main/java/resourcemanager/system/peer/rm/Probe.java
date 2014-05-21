@@ -31,7 +31,7 @@ public class Probe {
         }
     }
     
-    public static class Response extends Message implements Serializable {
+    public static class Response extends Message implements Serializable, Comparable<Response> {
         private static final long serialVersionUID = 6566343625721530642L;
        // private static final long serialVersionUID = 321;
         private long id;
@@ -49,6 +49,19 @@ public class Probe {
         
         public int getQueue() {
             return queueLength;
+        }
+
+        @Override
+        public int compareTo(Response o) {
+            int myQueue = getQueue();
+            int otherQueue = o.getQueue();
+            
+            if(myQueue < otherQueue)
+                return -1;
+            else if(myQueue > otherQueue)
+                return 1;
+            else
+                return 0;
         }
     }
 }
