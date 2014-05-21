@@ -8,12 +8,14 @@ public final class RequestResource extends Event {
     private final int numCpus;
     private final int memoryInMbs;
     private final int timeToHoldResource;
+    private final int machines;
 
-    public RequestResource(long id, int numCpus, int memoryInMbs, int timeToHoldResource) {
+    public RequestResource(long id, int numCpus, int memoryInMbs, int timeToHoldResource, int machines) {
         this.id = id;
         this.numCpus = numCpus;
         this.memoryInMbs = memoryInMbs;
         this.timeToHoldResource = timeToHoldResource;
+        this.machines = machines;
     }
 
     public long getId() {
@@ -32,4 +34,7 @@ public final class RequestResource extends Event {
         return numCpus;
     }
 
+    public int getMachines() {
+        return machines;
+    }
 }
