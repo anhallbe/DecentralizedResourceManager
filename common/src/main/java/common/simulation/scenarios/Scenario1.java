@@ -16,10 +16,10 @@ public class Scenario1 extends Scenario {
                 
 		StochasticProcess process1 = new StochasticProcess() {{
 			eventInterArrivalTime(constant(100));
-			raise(50, Operations.requestResources(), 
+			raise(500, Operations.requestResources(), 
                                 uniform(0, Integer.MAX_VALUE),
                                 constant(2), constant(2000),
-                                constant(1000*60*1) // 1 minute
+                                constant(100*1) // 1 minute
 //                                constant(1000*10)
                                 );
 		}};
