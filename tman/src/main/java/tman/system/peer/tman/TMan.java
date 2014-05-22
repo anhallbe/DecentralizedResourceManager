@@ -2,13 +2,19 @@ package tman.system.peer.tman;
 
 import common.configuration.TManConfiguration;
 import common.peer.AvailableResources;
+import common.peer.PeerDescriptor;
 import java.util.ArrayList;
 
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import org.hamcrest.SelfDescribing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,12 +39,15 @@ public final class TMan extends ComponentDefinition {
     Positive<CyclonSamplePort> cyclonSamplePort = positive(CyclonSamplePort.class);
     Positive<Network> networkPort = positive(Network.class);
     Positive<Timer> timerPort = positive(Timer.class);
+    
     private long period;
     private Address self;
     private ArrayList<Address> tmanPartners;
     private TManConfiguration tmanConfiguration;
     private Random r;
     private AvailableResources availableResources;
+    
+    private ArrayList<PeerDescriptor> viewTMan;
 
     public class TManSchedule extends Timeout {
 
@@ -72,7 +81,8 @@ public final class TMan extends ComponentDefinition {
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new TManSchedule(rst));
             trigger(rst, timerPort);
-
+            
+            viewTMan = new ArrayList<PeerDescriptor>();
         }
     };
 
@@ -80,11 +90,19 @@ public final class TMan extends ComponentDefinition {
         @Override
         public void handle(TManSchedule event) {
             Snapshot.updateTManPartners(self, tmanPartners);
-
+            
             // Publish sample to connected components
             trigger(new TManSample(tmanPartners), tmanPort);
         }
     };
+    
+    public ArrayList<PeerDescriptor> rank(Address baseNode, ArrayList<PeerDescriptor> view) {
+        
+        PeerDescriptor myDescriptor = new PeerDescriptor(self, availableResources.getNumFreeCpus(), availableResources.getFreeMemInMbs());
+        Collections.sort(view, new ComparatorByCPU(myDescriptor));
+        
+        return view;
+    }
 
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
@@ -92,8 +110,23 @@ public final class TMan extends ComponentDefinition {
             List<Address> cyclonPartners = event.getSample();
 
             // merge cyclonPartners into TManPartners
+            // TODO
+            tmanPartners = merge(cyclonPartners, tmanPartners);
         }
     };
+    
+    // Merge two lists and remove redundancy.
+    public ArrayList<Address> merge(List<Address> list1, List<Address> list2) {
+        
+        Set<Address> mergeSet = new HashSet<Address>();
+        
+        mergeSet.addAll(list1);
+        mergeSet.addAll(list2);
+        ArrayList<Address> list = new ArrayList<Address>();
+        list.addAll(mergeSet);
+        
+        return list;        
+    }
 
     Handler<ExchangeMsg.Request> handleTManPartnersRequest = new Handler<ExchangeMsg.Request>() {
         @Override
