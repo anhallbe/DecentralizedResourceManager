@@ -5,10 +5,14 @@ import scipy.stats as stats
 
 times = get_time("asd.log")
 times = sort(times)
-times = times[0:len(times)-len(times)/100]
+##times = times[0:len(times)-len(times)/100]
 
 t = range(len(times))
 s = times
+
+print("Mean: ", np.mean(times))
+print("Median: ", np.median(times))
+
 plot(t, s)
 
 xlabel('request n')

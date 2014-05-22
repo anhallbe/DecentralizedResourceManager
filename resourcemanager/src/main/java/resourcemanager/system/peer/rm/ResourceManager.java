@@ -57,7 +57,7 @@ public final class ResourceManager extends ComponentDefinition {
     // This is a routing table maintaining a list of pairs in each partition.
     private Map<Integer, List<PeerDescriptor>> routingTable;
     
-    private final int NPROBES = 2;
+    private final int NPROBES = 1;
     private List<Probe.Response> probeResponses;
     private Queue<Task> pendingTasks;      //This queue contains tasks that need to be performed on this node.
     private int MAX_CPU;
