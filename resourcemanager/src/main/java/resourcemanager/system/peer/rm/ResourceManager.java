@@ -48,6 +48,7 @@ public final class ResourceManager extends ComponentDefinition {
     Negative<Web> webPort = negative(Web.class);
     Positive<CyclonSamplePort> cyclonSamplePort = positive(CyclonSamplePort.class);
     Positive<TManSamplePort> tmanPort = positive(TManSamplePort.class);
+    
     ArrayList<Address> neighbours = new ArrayList<Address>();
     private Address self;
     private RmConfiguration configuration;
@@ -57,7 +58,8 @@ public final class ResourceManager extends ComponentDefinition {
     // This is a routing table maintaining a list of pairs in each partition.
     private Map<Integer, List<PeerDescriptor>> routingTable;
     
-    private final int NPROBES = 1;
+    private final int NPROBES = 2;
+    
     private List<Probe.Response> probeResponses;
     private Queue<Task> pendingTasks;      //This queue contains tasks that need to be performed on this node.
     private int MAX_CPU;
@@ -101,7 +103,7 @@ public final class ResourceManager extends ComponentDefinition {
             random = new Random(init.getConfiguration().getSeed());
             availableResources = init.getAvailableResources();
             long period = configuration.getPeriod();
-            availableResources = init.getAvailableResources();
+//            availableResources = init.getAvailableResources();
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new UpdateTimeout(rst));
             trigger(rst, timerPort);
@@ -144,6 +146,8 @@ public final class ResourceManager extends ComponentDefinition {
             logger.info("start\t" + event.getId());
 //            logger.info("--------------------My node ID: " + self.getId());
 //            logger.info("--------------------Request ID: " + event.getId());
+            
+            // Start time ----------------------------------------------------------------------------
             FileIO.append(System.currentTimeMillis() + "\tstart\t" + event.getId() + "\n", "asd.log");
 
             int rCpu = event.getNumCpus();
@@ -162,11 +166,13 @@ public final class ResourceManager extends ComponentDefinition {
 //            } else {
                 //System.out.println("Allocate resources: " + event.getNumCpus() + " + " + event.getMemoryInMbs() + " + " + event.getTimeToHoldResource());
             pendingRequests.put(jobID, event);
-            if(neighbours.size() > 0) {
+            if(neighbours.size() > 0) {                     
                 for(int j=0; j<NPROBES*machines; j++) {
-                    Address n1 = neighbours.get(random.nextInt(neighbours.size()));
+                    Address n1 = neighbours.get(random.nextInt(neighbours.size()));                    
                     Probe.Request r1 = new Probe.Request(self, n1, jobID);
                     trigger(r1, networkPort);
+                    
+                    System.out.println("task " + r1.getId() + ": proble" + " sent to " + n1.getId());
                 }
                 //System.out.println("------Probes sent");
             }
@@ -201,6 +207,9 @@ public final class ResourceManager extends ComponentDefinition {
 //                trigger(new RequestResources.Request(self, best.getSource(), job.getCpus(), job.getMem(), job.getMilliseconds(), id), networkPort);     //TODO Add real cpu, mem, time
                 RequestResource r = pendingRequests.get(id);    //TODO, remove later, otherwise memory leak
                 for(Probe.Response res : bestResponses(probeResponses, id, machines)) {
+                    
+                    System.out.println("task " + res.getId() + ": allocated to " + res.getSource().getId());
+                    
                     trigger(new RequestResources.Request(self, res.getSource(), r.getNumCpus(), r.getMemoryInMbs(), r.getTimeToHoldResource(), id), networkPort);
                 }
             }
@@ -227,7 +236,9 @@ public final class ResourceManager extends ComponentDefinition {
             if(availableResources.isAvailable(cpu, mem)) {
                 System.out.println("Task id " + event.getId() + " allocated.");
                 logger.info("end\t" + event.getId());
-                FileIO.append(System.currentTimeMillis() + "\tend\t" + event.getId() + "\n", "asd.log");
+                
+                // End time.
+//                FileIO.append(System.currentTimeMillis() + "\tend\t" + event.getId() + "\n", "asd.log");
                 
                 availableResources.allocate(cpu, mem);
                 //TODO Add a timer event to notify us when the time has run out, and resources should be released.
@@ -266,6 +277,8 @@ public final class ResourceManager extends ComponentDefinition {
                 availableResources.allocate(nextTask.getCpus(), nextTask.getMem());
                 System.out.println("Task id " + nextTask.getId() + " allocated.");
                 logger.info("end\t" + nextTask.getId());
+                
+                // End time
                 FileIO.append(System.currentTimeMillis() + "\tend\t" + nextTask.getId() + "\n", "asd.log");
                 
                 ScheduleTimeout t = new ScheduleTimeout(nextTask.getMilliseconds());
@@ -283,12 +296,20 @@ public final class ResourceManager extends ComponentDefinition {
             // TODO 
             // Received response from some peer. How to handle fail/success?
             boolean success = event.getSuccess();
-            if(success)
+            if(success){                
                 System.out.println("Response: SUCCESS");
+                
+                // TODO
+                // End time
+                //FileIO.append(System.currentTimeMillis() + "\tend\t" + event.getId() + "\n", "asd.log");
+                
+            }
             else
                 System.out.println("Response: FAILURE.....Now what?");
         }
     };
+    
+    
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {
@@ -298,10 +319,12 @@ public final class ResourceManager extends ComponentDefinition {
             neighbours.clear();
             neighbours.addAll(event.getSample());
             
-//            logger.info(self.getId() + ": Neighbors:");
-//            for(Address n : neighbours)
-//                logger.info("\t" + n.getId());
-
+//            System.out.print(self.getId() + " neighbours: ");
+//            for (Address n : neighbours) {
+//                System.out.print(n.getId() + " ");
+//            }
+//            System.out.println();
+            
             // update routing tables
             for (Address p : neighbours) {
                 int partition = p.getId() % configuration.getNumPartitions();
@@ -363,9 +386,9 @@ public final class ResourceManager extends ComponentDefinition {
                 relevantResponses.add(res);
         Collections.sort(relevantResponses);
         
-        logger.info("The sorted List: ");
+        logger.info("The sorted probe response List: ");
         for(Probe.Response res : relevantResponses)
-            logger.info("" + res.getQueue());
+            logger.info("task " + res.getId() + ": " + res.getSource().getId() + " queue length is " + res.getQueue());
         return relevantResponses.subList(0, n);
     }
 }
