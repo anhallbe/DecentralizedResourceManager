@@ -17,7 +17,7 @@ public class RequestResources  {
         private final int amountMemInMb;
         private final int ms;
         private final long id;
-
+    
         public Request(Address source, Address destination, int numCpus, int amountMemInMb, int ms, long id) {
             super(source, destination);
             this.numCpus = numCpus;

@@ -42,6 +42,7 @@ import tman.system.peer.tman.TManSamplePort;
 public final class ResourceManager extends ComponentDefinition {
 
     private static final Logger logger = LoggerFactory.getLogger(ResourceManager.class);
+    
     Positive<RmPort> indexPort = positive(RmPort.class);
     Positive<Network> networkPort = positive(Network.class);
     Positive<Timer> timerPort = positive(Timer.class);
@@ -58,7 +59,7 @@ public final class ResourceManager extends ComponentDefinition {
     // This is a routing table maintaining a list of pairs in each partition.
     private Map<Integer, List<PeerDescriptor>> routingTable;
     
-    private final int NPROBES = 2;
+    private final int NPROBES = 1;
     
     private List<Probe.Response> probeResponses;
     private Queue<Task> pendingTasks;      //This queue contains tasks that need to be performed on this node.
@@ -142,8 +143,8 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<RequestResource> handleRequestResource = new Handler<RequestResource>() {
         @Override
         public void handle(RequestResource event) {
-            System.out.println("Request with id " + event.getId() + " received.");
-            logger.info("start\t" + event.getId());
+            System.out.println("Job " + event.getId() + " received.");
+//            logger.info("start\t" + event.getId());
 //            logger.info("--------------------My node ID: " + self.getId());
 //            logger.info("--------------------Request ID: " + event.getId());
             
@@ -234,8 +235,8 @@ public final class ResourceManager extends ComponentDefinition {
             }
             
             if(availableResources.isAvailable(cpu, mem)) {
-                System.out.println("Task id " + event.getId() + " allocated.");
-                logger.info("end\t" + event.getId());
+//                System.out.println("Task id " + event.getId() + " allocated.");
+//                logger.info("end\t" + event.getId());
                 
                 // End time.
 //                FileIO.append(System.currentTimeMillis() + "\tend\t" + event.getId() + "\n", "asd.log");
@@ -247,14 +248,18 @@ public final class ResourceManager extends ComponentDefinition {
                 ScheduleTimeout t = new ScheduleTimeout(timeMS);
                 t.setTimeoutEvent(new ResourceAllocationTimeout(t, cpu, mem));
                 trigger(t, timerPort);
+                
+                // send allocating successful response
+                trigger(new RequestResources.Response(self, event.getSource(), true, event.getId()), networkPort);
+                
             } else {
                 //System.out.println("Not enough resources, adding to queue.");
-                pendingTasks.add(new Task(cpu, mem, timeMS, event.getId()));
+                pendingTasks.add(new Task(cpu, mem, timeMS, event.getId(), event.getSource()));
             }
             
             //TODO Should not be responding here, wait for the job to be finished instead?
             //Or wait for the resources to be allocated... To measure performance
-            trigger(new RequestResources.Response(self, event.getSource(), true, event.getId()), networkPort);
+//            trigger(new RequestResources.Response(self, event.getSource(), true, event.getId()), networkPort);
         }
     };
 
@@ -275,11 +280,12 @@ public final class ResourceManager extends ComponentDefinition {
             if(nextTask != null && availableResources.isAvailable(nextTask.getCpus(), nextTask.getMem())) {
                 pendingTasks.remove();
                 availableResources.allocate(nextTask.getCpus(), nextTask.getMem());
-                System.out.println("Task id " + nextTask.getId() + " allocated.");
-                logger.info("end\t" + nextTask.getId());
-                
+//                System.out.println("Task id " + nextTask.getId() + " allocated.");
+//                logger.info("end\t" + nextTask.getId());
+                                
                 // End time
-                FileIO.append(System.currentTimeMillis() + "\tend\t" + nextTask.getId() + "\n", "asd.log");
+//                FileIO.append(System.currentTimeMillis() + "\tend\t" + nextTask.getId() + "\n", "asd.log");
+                trigger(new RequestResources.Response(self, nextTask.getSource(), true, nextTask.getId()), networkPort);
                 
                 ScheduleTimeout t = new ScheduleTimeout(nextTask.getMilliseconds());
                 t.setTimeoutEvent(new ResourceAllocationTimeout(t, nextTask.getCpus(), nextTask.getMem()));
@@ -297,11 +303,11 @@ public final class ResourceManager extends ComponentDefinition {
             // Received response from some peer. How to handle fail/success?
             boolean success = event.getSuccess();
             if(success){                
-                System.out.println("Response: SUCCESS");
+                System.out.println("RequestResources.Response: SUCCESS");
                 
                 // TODO
                 // End time
-                //FileIO.append(System.currentTimeMillis() + "\tend\t" + event.getId() + "\n", "asd.log");
+                FileIO.append(System.currentTimeMillis() + "\tend\t" + event.getId() + "\n", "asd.log");
                 
             }
             else
