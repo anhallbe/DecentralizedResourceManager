@@ -303,10 +303,10 @@ public final class ResourceManager extends ComponentDefinition {
             // Received response from some peer. How to handle fail/success?
             boolean success = event.getSuccess();
             if(success){                
-                System.out.println("RequestResources.Response: SUCCESS");
+                System.out.println("task " + event.getId() + " allocated : SUCCESS");
                 
                 // TODO
-                // End time
+                // End time ----------------------------------------------------------------------------
                 FileIO.append(System.currentTimeMillis() + "\tend\t" + event.getId() + "\n", "asd.log");
                 
             }
