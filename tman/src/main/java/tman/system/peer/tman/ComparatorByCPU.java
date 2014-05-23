@@ -10,7 +10,7 @@ import common.peer.PeerDescriptor;
 import java.util.Comparator;
 
 /**
- *
+ *  TODO: Change to PeerDesctiptorTMan
  * @author Zhao Zhengyang
  */
 public class ComparatorByCPU implements Comparator<PeerDescriptor>{

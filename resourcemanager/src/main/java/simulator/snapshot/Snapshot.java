@@ -88,10 +88,10 @@ public class Snapshot {
         str += "Peer with max amount of free mem in MB: " + maxFreeMemInMb + "\n";
         str += "Peer with min amount of free mem in MB: " + minFreeMemInMb + "\n";
         
-        str += "Peers:\n";
-        for(PeerInfo p : peers.values()) {
-            str += "\t" + p.getNumFreeCpus() + " cpu, " + p.getFreeMemInMbs() + " mem.\n";
-        }
+//        str += "Peers:\n";
+//        for(PeerInfo p : peers.values()) {
+//            str += "\t" + p.getNumFreeCpus() + " cpu, " + p.getFreeMemInMbs() + " mem.\n";
+//        }
 
         return str;
     }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
+import cyclon.system.peer.cyclon.DescriptorBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,6 +29,7 @@ import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timeout;
 import se.sics.kompics.timer.Timer;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import tman.simulator.snapshot.Snapshot;
 
@@ -47,7 +49,12 @@ public final class TMan extends ComponentDefinition {
     private Random r;
     private AvailableResources availableResources;
     
-    private ArrayList<PeerDescriptor> viewTMan;
+    private int m = 10;         //m, message size, TODO: Add to configuration
+    private int sampleSize = 10;
+    
+    private List<PeerDescriptorTMan> viewTMan;
+    
+    private PeerDescriptorTMan myDescriptor;
 
     public class TManSchedule extends Timeout {
 
@@ -81,64 +88,103 @@ public final class TMan extends ComponentDefinition {
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new TManSchedule(rst));
             trigger(rst, timerPort);
+            viewTMan = new ArrayList<PeerDescriptorTMan>();
             
-            viewTMan = new ArrayList<PeerDescriptor>();
+            myDescriptor = new PeerDescriptorTMan(self, availableResources);
         }
     };
 
     Handler<TManSchedule> handleRound = new Handler<TManSchedule>() {
         @Override
         public void handle(TManSchedule event) {
-            Snapshot.updateTManPartners(self, tmanPartners);
             
-            // Publish sample to connected components
-            trigger(new TManSample(tmanPartners), tmanPort);
+            //TODO: Active part of TMan. Initiate shuffle
+            PeerDescriptorTMan p = selectPeer(rank(myDescriptor, viewTMan));    //TODO: softMaxFunction?
+            ArrayList<PeerDescriptorTMan> temp = new ArrayList<PeerDescriptorTMan>();
+            temp.add(myDescriptor);
+            List<PeerDescriptorTMan> buffer = merge(viewTMan, temp);
+            buffer.remove(p);
+            buffer = rank(p, buffer);
+            buffer = buffer.subList(0, m);
+            ExchangeMsg.Request req = new ExchangeMsg.Request(new DescriptorBufferTMan(myDescriptor, buffer), self, p.getAddress());
+            trigger(req, networkPort);
+            
         }
     };
     
-    public ArrayList<PeerDescriptor> rank(Address baseNode, ArrayList<PeerDescriptor> view) {
-        
-        PeerDescriptor myDescriptor = new PeerDescriptor(self, availableResources.getNumFreeCpus(), availableResources.getFreeMemInMbs());
-        Collections.sort(view, new ComparatorByCPU(myDescriptor));
-        
-        return view;
+    public List<PeerDescriptorTMan> rank(PeerDescriptorTMan myDescriptor, List<PeerDescriptorTMan> view) {
+//        
+//        PeerDescriptor myDescriptor = new PeerDescriptor(self, availableResources.getNumFreeCpus(), availableResources.getFreeMemInMbs());
+//        Collections.sort(view, new ComparatorByCPU(myDescriptor));
+//        
+//        return view;
+        throw new NotImplementedException();
+    }
+    
+    public PeerDescriptorTMan selectPeer(List<PeerDescriptorTMan> view) {
+        throw new NotImplementedException();
     }
 
-    Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
-        @Override
-        public void handle(CyclonSample event) {
-            List<Address> cyclonPartners = event.getSample();
-
-            // merge cyclonPartners into TManPartners
-            // TODO
-            tmanPartners = merge(cyclonPartners, tmanPartners);
-        }
-    };
-    
     // Merge two lists and remove redundancy.
-    public ArrayList<Address> merge(List<Address> list1, List<Address> list2) {
+    public List<PeerDescriptorTMan> merge(List<PeerDescriptorTMan> list1, List<PeerDescriptorTMan> list2) {
         
-        Set<Address> mergeSet = new HashSet<Address>();
-        
+        Set<PeerDescriptorTMan> mergeSet = new HashSet<PeerDescriptorTMan>();
         mergeSet.addAll(list1);
         mergeSet.addAll(list2);
-        ArrayList<Address> list = new ArrayList<Address>();
+        ArrayList<PeerDescriptorTMan> list = new ArrayList<PeerDescriptorTMan>();
         list.addAll(mergeSet);
         
         return list;        
     }
+    
+    Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
+        @Override
+        public void handle(CyclonSample event) {
+            List<Address> cyclonAddresses = event.getSample();
+            List<PeerDescriptorTMan> cyclonDescriptors = new ArrayList<PeerDescriptorTMan>();
+            for(Address a : cyclonAddresses)
+                cyclonDescriptors.add(new PeerDescriptorTMan(a, null));
+            
+            viewTMan = merge(viewTMan, cyclonDescriptors);
+            // merge cyclonPartners into TManPartners
+            // TODO change to PeerDescriptor
+            //tmanPartners = merge(cyclonPartners, tmanPartners);
+        }
+    };
+    
 
     Handler<ExchangeMsg.Request> handleTManPartnersRequest = new Handler<ExchangeMsg.Request>() {
         @Override
         public void handle(ExchangeMsg.Request event) {
-
+            List<PeerDescriptorTMan> temp = new ArrayList<PeerDescriptorTMan>();
+            temp.add(myDescriptor);
+            List<PeerDescriptorTMan> buffer = merge(viewTMan, temp);
+            buffer = rank(event.getRequestBuffer().getFrom(), buffer);
+            buffer = buffer.subList(0, m);
+            ExchangeMsg.Response resp = new ExchangeMsg.Response(new DescriptorBufferTMan(myDescriptor, buffer), self, event.getSource());
+            trigger(resp, networkPort);
+            
+            List<PeerDescriptorTMan> bufferQ = event.getRequestBuffer().getDescriptors();
+            viewTMan = merge(bufferQ, viewTMan);
         }
     };
 
     Handler<ExchangeMsg.Response> handleTManPartnersResponse = new Handler<ExchangeMsg.Response>() {
         @Override
         public void handle(ExchangeMsg.Response event) {
-
+            List<PeerDescriptorTMan> buffer = event.getResponseBuffer().getDescriptors();
+            buffer.remove(myDescriptor);
+            viewTMan = merge(buffer, viewTMan);
+            
+            // Publish sample to connected components
+            List<PeerDescriptorTMan> rankedView = rank(myDescriptor, viewTMan);
+            tmanPartners.clear();
+            for(int i=0; i<sampleSize; i++)
+                if(i < rankedView.size())
+                    tmanPartners.add(rankedView.get(i).getAddress());
+                
+            Snapshot.updateTManPartners(self, tmanPartners);
+            trigger(new TManSample(tmanPartners), tmanPort);
         }
     };
 

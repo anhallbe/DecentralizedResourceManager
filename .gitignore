@@ -12,3 +12,5 @@ resourcemanager/search.out
 *.pyc
 *.log
 *.out
+*.png
+*.db
