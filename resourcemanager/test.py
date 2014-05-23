@@ -12,6 +12,7 @@ s = times
 
 print("Mean: ", np.mean(times))
 print("Median: ", np.median(times))
+print("99:th percentile: ", np.percentile(times, 99))
 
 plot(t, s)
 

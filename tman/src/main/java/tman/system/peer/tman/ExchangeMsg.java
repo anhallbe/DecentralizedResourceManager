@@ -2,7 +2,7 @@ package tman.system.peer.tman;
 
 import java.util.UUID;
 
-import cyclon.system.peer.cyclon.DescriptorBuffer;
+//import cyclon.system.peer.cyclon.DescriptorBuffer;
 import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Message;
 import se.sics.kompics.timer.ScheduleTimeout;
@@ -13,54 +13,48 @@ public class ExchangeMsg {
     public static class Request extends Message {
 
         private static final long serialVersionUID = 8493601671018888143L;
-        private final UUID requestId;
-        private final DescriptorBuffer randomBuffer;
+//        private final UUID requestId;
+        private final DescriptorBufferTMan requestBuffer;
 
 
-        public Request(UUID requestId, DescriptorBuffer randomBuffer, Address source, 
-                Address destination) {
+        public Request(DescriptorBufferTMan requestBuffer, Address source, Address destination) {
             super(source, destination);
-            this.requestId = requestId;
-            this.randomBuffer = randomBuffer;
+//            this.requestId = requestId;
+            this.requestBuffer = requestBuffer;
         }
 
 
-        public UUID getRequestId() {
-            return requestId;
-        }
+//        public UUID getRequestId() {
+//            return requestId;
+//        }
 
         
-        public DescriptorBuffer getRandomBuffer() {
-            return randomBuffer;
-        }
-
-
-        public int getSize() {
-            return 0;
+        public DescriptorBufferTMan getRequestBuffer() {
+            return requestBuffer;
         }
     }
 
     public static class Response extends Message {
 
         private static final long serialVersionUID = -5022051054665787770L;
-        private final UUID requestId;
-        private final DescriptorBuffer selectedBuffer;
+//        private final UUID requestId;
+        private final DescriptorBufferTMan responseBuffer;
 
 
-        public Response(UUID requestId, DescriptorBuffer selectedBuffer, Address source, Address destination) {
+        public Response(DescriptorBufferTMan responseBuffer, Address source, Address destination) {
             super(source, destination);
-            this.requestId = requestId;
-            this.selectedBuffer = selectedBuffer;
+//            this.requestId = requestId;
+            this.responseBuffer = responseBuffer;
         }
 
 
-        public UUID getRequestId() {
-            return requestId;
-        }
+//        public UUID getRequestId() {
+//            return requestId;
+//        }
 
 
-        public DescriptorBuffer getSelectedBuffer() {
-            return selectedBuffer;
+        public DescriptorBufferTMan getResponseBuffer() {
+            return responseBuffer;
         }
 
 

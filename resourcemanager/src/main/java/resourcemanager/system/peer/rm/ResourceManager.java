@@ -57,7 +57,7 @@ public final class ResourceManager extends ComponentDefinition {
     // This is a routing table maintaining a list of pairs in each partition.
     private Map<Integer, List<PeerDescriptor>> routingTable;
     
-    private final int NPROBES = 1;
+    private final int NPROBES = 2;
     private List<Probe.Response> probeResponses;
     private Queue<Task> pendingTasks;      //This queue contains tasks that need to be performed on this node.
     private int MAX_CPU;
@@ -301,7 +301,6 @@ public final class ResourceManager extends ComponentDefinition {
 //            logger.info(self.getId() + ": Neighbors:");
 //            for(Address n : neighbours)
 //                logger.info("\t" + n.getId());
-
             // update routing tables
             for (Address p : neighbours) {
                 int partition = p.getId() % configuration.getNumPartitions();
@@ -363,9 +362,9 @@ public final class ResourceManager extends ComponentDefinition {
                 relevantResponses.add(res);
         Collections.sort(relevantResponses);
         
-        logger.info("The sorted List: ");
-        for(Probe.Response res : relevantResponses)
-            logger.info("" + res.getQueue());
+//        logger.info("The sorted List: ");
+//        for(Probe.Response res : relevantResponses)
+//            logger.info("" + res.getQueue());
         return relevantResponses.subList(0, n);
     }
 }
