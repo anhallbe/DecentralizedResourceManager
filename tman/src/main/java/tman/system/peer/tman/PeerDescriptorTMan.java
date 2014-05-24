@@ -23,21 +23,24 @@ public class PeerDescriptorTMan implements Serializable {
         this.address = address;
         this.availableResources = availableResources;
     }
-    
-    public int getFreeCPUs() {
-        return availableResources.getNumFreeCpus();
-    }
-    
-    public int getFreeMem() {
-        return availableResources.getFreeMemInMbs();
-    }
 
     public Address getAddress() {
         return address;
+    }
+    
+    public AvailableResources getAvailableResources() {
+        return availableResources;
     }
 
     @Override
     public boolean equals(Object obj) {
         return super.equals(obj); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 17 * hash + (this.address != null ? this.address.hashCode() : 0);
+        return hash;
     }
 }

@@ -2,20 +2,16 @@ package tman.system.peer.tman;
 
 import common.configuration.TManConfiguration;
 import common.peer.AvailableResources;
-import common.peer.PeerDescriptor;
 import java.util.ArrayList;
 
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
-import cyclon.system.peer.cyclon.DescriptorBuffer;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import org.hamcrest.SelfDescribing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,15 +122,48 @@ public final class TMan extends ComponentDefinition {
     }
 
     // Merge two lists and remove redundancy.
-    public List<PeerDescriptorTMan> merge(List<PeerDescriptorTMan> list1, List<PeerDescriptorTMan> list2) {
+    public List<PeerDescriptorTMan> merge(List<PeerDescriptorTMan> oldList, List<PeerDescriptorTMan> newList) {
         
-        Set<PeerDescriptorTMan> mergeSet = new HashSet<PeerDescriptorTMan>();
-        mergeSet.addAll(list1);
-        mergeSet.addAll(list2);
-        ArrayList<PeerDescriptorTMan> list = new ArrayList<PeerDescriptorTMan>();
-        list.addAll(mergeSet);
+        List<PeerDescriptorTMan> list = new ArrayList<PeerDescriptorTMan>();
+        List<PeerDescriptorTMan> ol = new ArrayList<PeerDescriptorTMan>(oldList);
+        List<PeerDescriptorTMan> nl = new ArrayList<PeerDescriptorTMan>(newList);
         
-        return list;        
+        for (PeerDescriptorTMan dNew : newList) {
+            for(PeerDescriptorTMan dOld : ol) {
+                // If dOld and dNew have the same address
+                // if dNew.availableResources != null, remove dOld and keep dNew
+                // if dNew.availableResources = null, remove dNew and keep dOld
+                if (dOld.getAddress().getId() == dNew.getAddress().getId()) {
+                    if (dNew.getAvailableResources() != null) {
+                        ol.remove(dOld);
+                    }
+                    else {
+                        nl.remove(dNew);
+                        // Finish the loop of oldList, and start from next dNew in newList
+                        break;
+                    }
+                }
+            }
+        }
+        list.addAll(ol);
+        list.addAll(nl);
+        // Remove redundency of list
+        List<PeerDescriptorTMan> tempList = new LinkedList<PeerDescriptorTMan>(list);
+        for (int i = 0; i < list.size()-1; i++) {
+            for (int j=i+1; j < list.size(); j++) {
+                if (list.get(j).getAddress().getId() == list.get(i).getAddress().getId()) {
+                    if (list.get(i).getAvailableResources() != null) {
+                        tempList.remove(list.get(j));
+                    }
+                    else {
+                        tempList.remove(list.get(i));
+                        // Finish the loop of j, and start from
+                        break;
+                    }
+                }
+            }
+        }
+        return tempList;        
     }
     
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
