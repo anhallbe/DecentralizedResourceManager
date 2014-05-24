@@ -115,17 +115,19 @@ public final class TMan extends ComponentDefinition {
     
     public List<PeerDescriptorTMan> rank(PeerDescriptorTMan myDescriptor, List<PeerDescriptorTMan> view) {
 //        throw new NotImplementedException();
-        Collections.sort(view, new ComparatorByCPU(myDescriptor));    
+        Collections.sort(view, new ComparatorByCPU(myDescriptor));
         return view;
     }
     
     public PeerDescriptorTMan selectPeer(List<PeerDescriptorTMan> view) {
 //        throw new NotImplementedException();
-        return getSoftMaxAddress(view);
+        List<PeerDescriptorTMan> list = new ArrayList<PeerDescriptorTMan>();
+        list = view.subList(0, view.size()/2);
+        return list.get(r.nextInt(list.size()));
     }
 
     // Merge two lists and remove redundancy.
-    // The local list is set as oldList, the outcoming list is set as newList.
+    // The local list is set as oldList, the incoming list is set as newList.
     public List<PeerDescriptorTMan> merge(List<PeerDescriptorTMan> oldList, List<PeerDescriptorTMan> newList) {
         
         List<PeerDescriptorTMan> list = new ArrayList<PeerDescriptorTMan>();
@@ -229,14 +231,14 @@ public final class TMan extends ComponentDefinition {
     // A temperature of '0.0' will throw a divide by zero exception :)
     // Reference:
     // http://webdocs.cs.ualberta.ca/~sutton/book/2/node4.html
-    public PeerDescriptorTMan getSoftMaxAddress(List<PeerDescriptorTMan> viewTMans) {
-        Collections.sort(viewTMans, new ComparatorByCPU(myDescriptor));
+    public PeerDescriptorTMan getSoftMaxPeer(List<PeerDescriptorTMan> view) {
+        Collections.sort(view, new ComparatorByCPU(myDescriptor));
 
         double rnd = r.nextDouble();
         double total = 0.0d;
-        double[] values = new double[viewTMans.size()];
-        int j = viewTMans.size() + 1;
-        for (int i = 0; i < viewTMans.size(); i++) {
+        double[] values = new double[view.size()];
+        int j = view.size() + 1;
+        for (int i = 0; i < view.size(); i++) {
             // get inverse of values - lowest have highest value.
             double val = j;
             j--;
@@ -251,10 +253,10 @@ public final class TMan extends ComponentDefinition {
             // normalise the probability for this entry
             double normalisedUtility = values[i] / total;
             if (normalisedUtility >= rnd) {
-                return viewTMans.get(i);
+                return view.get(i);
             }
         }
-        return viewTMans.get(viewTMans.size() - 1);
+        return view.get(view.size() - 1);
     }
 
 }
