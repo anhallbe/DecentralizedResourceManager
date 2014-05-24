@@ -99,7 +99,12 @@ public final class TMan extends ComponentDefinition {
             ArrayList<PeerDescriptorTMan> temp = new ArrayList<PeerDescriptorTMan>();
             temp.add(myDescriptor);
             List<PeerDescriptorTMan> buffer = merge(viewTMan, temp);
-            buffer.remove(p);
+            // Remove the peers in buffer whose address is the same as p.
+            for (PeerDescriptorTMan b : buffer) {
+                if (b.getAddress().getId() == p.getAddress().getId()) {
+                    buffer.remove(b);
+                }
+            }
             buffer = rank(p, buffer);
             buffer = buffer.subList(0, m);
             ExchangeMsg.Request req = new ExchangeMsg.Request(new DescriptorBufferTMan(myDescriptor, buffer), self, p.getAddress());
@@ -109,19 +114,18 @@ public final class TMan extends ComponentDefinition {
     };
     
     public List<PeerDescriptorTMan> rank(PeerDescriptorTMan myDescriptor, List<PeerDescriptorTMan> view) {
-//        
-//        PeerDescriptor myDescriptor = new PeerDescriptor(self, availableResources.getNumFreeCpus(), availableResources.getFreeMemInMbs());
-//        Collections.sort(view, new ComparatorByCPU(myDescriptor));
-//        
-//        return view;
-        throw new NotImplementedException();
+//        throw new NotImplementedException();
+        Collections.sort(view, new ComparatorByCPU(myDescriptor));    
+        return view;
     }
     
     public PeerDescriptorTMan selectPeer(List<PeerDescriptorTMan> view) {
-        throw new NotImplementedException();
+//        throw new NotImplementedException();
+        return getSoftMaxAddress(view);
     }
 
     // Merge two lists and remove redundancy.
+    // The local list is set as oldList, the outcoming list is set as newList.
     public List<PeerDescriptorTMan> merge(List<PeerDescriptorTMan> oldList, List<PeerDescriptorTMan> newList) {
         
         List<PeerDescriptorTMan> list = new ArrayList<PeerDescriptorTMan>();
@@ -225,14 +229,14 @@ public final class TMan extends ComponentDefinition {
     // A temperature of '0.0' will throw a divide by zero exception :)
     // Reference:
     // http://webdocs.cs.ualberta.ca/~sutton/book/2/node4.html
-    public Address getSoftMaxAddress(List<Address> entries) {
-        Collections.sort(entries, new ComparatorById(self));
+    public PeerDescriptorTMan getSoftMaxAddress(List<PeerDescriptorTMan> viewTMans) {
+        Collections.sort(viewTMans, new ComparatorByCPU(myDescriptor));
 
         double rnd = r.nextDouble();
         double total = 0.0d;
-        double[] values = new double[entries.size()];
-        int j = entries.size() + 1;
-        for (int i = 0; i < entries.size(); i++) {
+        double[] values = new double[viewTMans.size()];
+        int j = viewTMans.size() + 1;
+        for (int i = 0; i < viewTMans.size(); i++) {
             // get inverse of values - lowest have highest value.
             double val = j;
             j--;
@@ -247,10 +251,10 @@ public final class TMan extends ComponentDefinition {
             // normalise the probability for this entry
             double normalisedUtility = values[i] / total;
             if (normalisedUtility >= rnd) {
-                return entries.get(i);
+                return viewTMans.get(i);
             }
         }
-        return entries.get(entries.size() - 1);
+        return viewTMans.get(viewTMans.size() - 1);
     }
 
 }
