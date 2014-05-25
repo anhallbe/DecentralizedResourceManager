@@ -144,6 +144,8 @@ public final class ResourceManager extends ComponentDefinition {
             logger.info("start\t" + event.getId());
 //            logger.info("--------------------My node ID: " + self.getId());
 //            logger.info("--------------------Request ID: " + event.getId());
+            
+            // Task start time
             FileIO.append(System.currentTimeMillis() + "\tstart\t" + event.getId() + "\n", "asd.log");
 
             int rCpu = event.getNumCpus();
@@ -227,7 +229,9 @@ public final class ResourceManager extends ComponentDefinition {
             if(availableResources.isAvailable(cpu, mem)) {
                 System.out.println("Task id " + event.getId() + " allocated.");
                 logger.info("end\t" + event.getId());
-                FileIO.append(System.currentTimeMillis() + "\tend\t" + event.getId() + "\n", "asd.log");
+                
+//                FileIO.append(System.currentTimeMillis() + "\tend\t" + event.getId() + "\n", "asd.log");
+                trigger(new RequestResources.Response(self, event.getSource(), true, event.getId()), networkPort);
                 
                 availableResources.allocate(cpu, mem);
                 //TODO Add a timer event to notify us when the time has run out, and resources should be released.
@@ -238,12 +242,12 @@ public final class ResourceManager extends ComponentDefinition {
                 trigger(t, timerPort);
             } else {
                 //System.out.println("Not enough resources, adding to queue.");
-                pendingTasks.add(new Task(cpu, mem, timeMS, event.getId()));
+                pendingTasks.add(new Task(cpu, mem, timeMS, event.getId(), event.getSource()));
             }
             
             //TODO Should not be responding here, wait for the job to be finished instead?
             //Or wait for the resources to be allocated... To measure performance
-            trigger(new RequestResources.Response(self, event.getSource(), true, event.getId()), networkPort);
+//            trigger(new RequestResources.Response(self, event.getSource(), true, event.getId()), networkPort);
         }
     };
 
@@ -266,7 +270,9 @@ public final class ResourceManager extends ComponentDefinition {
                 availableResources.allocate(nextTask.getCpus(), nextTask.getMem());
                 System.out.println("Task id " + nextTask.getId() + " allocated.");
                 logger.info("end\t" + nextTask.getId());
-                FileIO.append(System.currentTimeMillis() + "\tend\t" + nextTask.getId() + "\n", "asd.log");
+                
+//                FileIO.append(System.currentTimeMillis() + "\tend\t" + nextTask.getId() + "\n", "asd.log");
+                trigger(new RequestResources.Response(self, nextTask.getAddress(), true, nextTask.getId()), networkPort);
                 
                 ScheduleTimeout t = new ScheduleTimeout(nextTask.getMilliseconds());
                 t.setTimeoutEvent(new ResourceAllocationTimeout(t, nextTask.getCpus(), nextTask.getMem()));
@@ -283,8 +289,13 @@ public final class ResourceManager extends ComponentDefinition {
             // TODO 
             // Received response from some peer. How to handle fail/success?
             boolean success = event.getSuccess();
-            if(success)
+            if(success) {
                 System.out.println("Response: SUCCESS");
+                
+                // Task end time
+                FileIO.append(System.currentTimeMillis() + "\tend\t" + event.getId() + "\n", "asd.log");
+            }            
+            
             else
                 System.out.println("Response: FAILURE.....Now what?");
         }
@@ -294,13 +305,20 @@ public final class ResourceManager extends ComponentDefinition {
         public void handle(CyclonSample event) {
             //System.out.println("Received samples: " + event.getSample().size());
             
-            // receive a new list of neighbours
-            neighbours.clear();
-            neighbours.addAll(event.getSample());
+            // receive a new list of neighbours 
+//            neighbours.clear();
+//            neighbours.addAll(event.getSample());
+            
+//            System.out.print(self.getId() + " CyclonSample samples: ");
+//            for (Address a : neighbours) {
+//                System.out.print(a.getId() + " ");
+//            }
+//            System.out.println();
             
 //            logger.info(self.getId() + ": Neighbors:");
 //            for(Address n : neighbours)
 //                logger.info("\t" + n.getId());
+            
             // update routing tables
             for (Address p : neighbours) {
                 int partition = p.getId() % configuration.getNumPartitions();
@@ -326,7 +344,17 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
         @Override
         public void handle(TManSample event) {
-            // TODO: 
+            // TODO:
+            
+            neighbours.clear();
+            neighbours.addAll(event.getSample());
+            
+//            System.out.print(self.getId() + " TManSample samples: ");
+//            for (Address a : neighbours) {
+//                System.out.print(a.getId() + " ");
+//            }
+//            System.out.println();
+            
         }
     };
 
