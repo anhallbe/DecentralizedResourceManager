@@ -6,7 +6,6 @@
 
 package tman.system.peer.tman;
 
-import common.peer.PeerDescriptor;
 import java.util.Comparator;
 
 /**
@@ -26,7 +25,7 @@ public class ComparatorByCPU implements Comparator<PeerDescriptorTMan>{
     // If base node prefers o1 rather than o2, o1 should be placed before o2, i.e. o1 < o2.
     public int compare(PeerDescriptorTMan o1, PeerDescriptorTMan o2) {
         int utility1, utility2;
-        int myUtility = myDescriptor.getAvailableResources().getNumFreeCpus();
+        int myUtility;
         
         if (o1.getAvailableResources() != null) {
             utility1 = o1.getAvailableResources().getNumFreeCpus();
@@ -38,6 +37,13 @@ public class ComparatorByCPU implements Comparator<PeerDescriptorTMan>{
         } else {
             utility2 = -1;
         }
+        if (myDescriptor.getAvailableResources() != null) {
+            myUtility = myDescriptor.getAvailableResources().getNumFreeCpus();
+        } else {
+            myUtility = -1;
+        }
+        
+        // Use gradient to order subset.
         // Prefer o1 than o2, o1 < o2.
         if (utility1 > myUtility && utility2 < myUtility) {
             return -1;
@@ -53,6 +59,17 @@ public class ComparatorByCPU implements Comparator<PeerDescriptorTMan>{
         else if (utility1 == utility2) {
             return 0;
         }
+        
+//        // Simply order subset according to utility decreasing. 
+//        if (utility1 < utility2) {
+//            return 1;
+//        }
+//        else if (utility1 > utility2) {
+//            return -1;
+//        }
+//        else if (utility1 == utility2) {
+//            return 0;
+//        }
         
         return 1;
     }

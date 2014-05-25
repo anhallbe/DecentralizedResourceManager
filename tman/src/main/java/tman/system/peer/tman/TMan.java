@@ -7,11 +7,9 @@ import java.util.ArrayList;
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,20 +93,23 @@ public final class TMan extends ComponentDefinition {
         public void handle(TManSchedule event) {
             
             //TODO: Active part of TMan. Initiate shuffle
-            PeerDescriptorTMan p = selectPeer(rank(myDescriptor, viewTMan));    //TODO: softMaxFunction?
-            ArrayList<PeerDescriptorTMan> temp = new ArrayList<PeerDescriptorTMan>();
-            temp.add(myDescriptor);
-            List<PeerDescriptorTMan> buffer = merge(viewTMan, temp);
-            // Remove the peers in buffer whose address is the same as p.
-            for (PeerDescriptorTMan b : buffer) {
-                if (b.getAddress().getId() == p.getAddress().getId()) {
-                    buffer.remove(b);
-                }
+            if (viewTMan.size() > 0) {
+                PeerDescriptorTMan p = selectPeer(rank(myDescriptor, viewTMan));    //TODO: softMaxFunction?
+                ArrayList<PeerDescriptorTMan> temp = new ArrayList<PeerDescriptorTMan>();
+                temp.add(myDescriptor);
+                List<PeerDescriptorTMan> buffer = merge(viewTMan, temp);
+                // Remove the peers in buffer whose address is the same as p.
+                List<PeerDescriptorTMan> tempList = new ArrayList<PeerDescriptorTMan>(buffer);
+                for (PeerDescriptorTMan b : tempList) {
+                    if (b.getAddress().getId() == p.getAddress().getId()) {
+                        buffer.remove(b);
+                    }
+                }                
+                buffer = rank(p, buffer);
+                buffer = buffer.subList(0, Math.min(m, buffer.size()));
+                ExchangeMsg.Request req = new ExchangeMsg.Request(new DescriptorBufferTMan(myDescriptor, buffer), self, p.getAddress());
+                trigger(req, networkPort);
             }
-            buffer = rank(p, buffer);
-            buffer = buffer.subList(0, m);
-            ExchangeMsg.Request req = new ExchangeMsg.Request(new DescriptorBufferTMan(myDescriptor, buffer), self, p.getAddress());
-            trigger(req, networkPort);
             
         }
     };
@@ -122,7 +123,12 @@ public final class TMan extends ComponentDefinition {
     public PeerDescriptorTMan selectPeer(List<PeerDescriptorTMan> view) {
 //        throw new NotImplementedException();
         List<PeerDescriptorTMan> list = new ArrayList<PeerDescriptorTMan>();
-        list = view.subList(0, view.size()/2);
+        if (view.size() < 3) {
+            return view.get(r.nextInt(view.size()));
+        }
+        else if (view.size() >= 3) {
+            list = view.subList(0, view.size() / 2 + 1);
+        }
         return list.get(r.nextInt(list.size()));
     }
 
@@ -134,8 +140,9 @@ public final class TMan extends ComponentDefinition {
         List<PeerDescriptorTMan> ol = new ArrayList<PeerDescriptorTMan>(oldList);
         List<PeerDescriptorTMan> nl = new ArrayList<PeerDescriptorTMan>(newList);
         
+        // TODO
         for (PeerDescriptorTMan dNew : newList) {
-            for(PeerDescriptorTMan dOld : ol) {
+            for(PeerDescriptorTMan dOld : oldList) {
                 // If dOld and dNew have the same address
                 // if dNew.availableResources != null, remove dOld and keep dNew
                 // if dNew.availableResources = null, remove dNew and keep dOld
@@ -194,8 +201,8 @@ public final class TMan extends ComponentDefinition {
             List<PeerDescriptorTMan> temp = new ArrayList<PeerDescriptorTMan>();
             temp.add(myDescriptor);
             List<PeerDescriptorTMan> buffer = merge(viewTMan, temp);
-            buffer = rank(event.getRequestBuffer().getFrom(), buffer);
-            buffer = buffer.subList(0, m);
+            buffer = rank(event.getRequestBuffer().getFrom(), buffer);            
+            buffer = buffer.subList(0, Math.min(m, buffer.size()));
             ExchangeMsg.Response resp = new ExchangeMsg.Response(new DescriptorBufferTMan(myDescriptor, buffer), self, event.getSource());
             trigger(resp, networkPort);
             
@@ -208,11 +215,29 @@ public final class TMan extends ComponentDefinition {
         @Override
         public void handle(ExchangeMsg.Response event) {
             List<PeerDescriptorTMan> buffer = event.getResponseBuffer().getDescriptors();
-            buffer.remove(myDescriptor);
-            viewTMan = merge(buffer, viewTMan);
+            // TODO delete the descriptors in buffer whose address is same as myDescriptor.
+            List<PeerDescriptorTMan> tempList = new ArrayList<PeerDescriptorTMan>(buffer);
+            for (PeerDescriptorTMan b : tempList) {
+                if (b.getAddress().getId() == myDescriptor.getAddress().getId()) {
+                    buffer.remove(b);
+                }
+            }
+            viewTMan = merge(viewTMan, buffer);
             
             // Publish sample to connected components
             List<PeerDescriptorTMan> rankedView = rank(myDescriptor, viewTMan);
+            
+            System.out.println(self.getId() + " free cup: " + myDescriptor.getAvailableResources().getNumFreeCpus() + " After ranking: ");
+            for(int i = 0; i < viewTMan.size(); i++) {
+                if (viewTMan.get(i).getAvailableResources() != null) {
+                    System.out.print(viewTMan.get(i).getAvailableResources().getNumFreeCpus() + " ");
+                }
+                else {
+                    System.out.print(-1 + " ");
+                }
+            }
+            System.out.println();
+            
             tmanPartners.clear();
             for(int i=0; i<sampleSize; i++)
                 if(i < rankedView.size())
