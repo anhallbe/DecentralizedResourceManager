@@ -24,8 +24,7 @@ public class ComparatorByCPU implements Comparator<PeerDescriptorTMan>{
     // In returned list after ordering, preferable peer should be placed to the head,
     // If base node prefers o1 rather than o2, o1 should be placed before o2, i.e. o1 < o2.
     public int compare(PeerDescriptorTMan o1, PeerDescriptorTMan o2) {
-        int utility1, utility2;
-        int myUtility;
+        int utility1, utility2, myUtility;
         
         if (o1.getAvailableResources() != null) {
             utility1 = o1.getAvailableResources().getNumFreeCpus();
@@ -43,33 +42,33 @@ public class ComparatorByCPU implements Comparator<PeerDescriptorTMan>{
             myUtility = -1;
         }
         
-        // Use gradient to order subset.
-        // Prefer o1 than o2, o1 < o2.
-        if (utility1 > myUtility && utility2 < myUtility) {
-            return -1;
-        }
-        // Prefer o2 than o1, o1 > o2.
-        else if (utility1 < myUtility && utility2 > myUtility) {
-            return 1;
-        }
-        // Prefer o1 than o2, o1 < o2.
-        else if (Math.abs(utility1 - myUtility) < Math.abs(utility2 - myUtility)) {
-            return -1;
-        }
-        else if (utility1 == utility2) {
-            return 0;
-        }
-        
-//        // Simply order subset according to utility decreasing. 
-//        if (utility1 < utility2) {
+//        // Use gradient to order subset.
+//        // order o1 before o2, set o1 < o2.
+//        if (utility1 > myUtility && utility2 < myUtility) {
+//            return -1;
+//        }
+//        // order o2 before o1, set o1 > o2.
+//        else if (utility1 < myUtility && utility2 > myUtility) {
 //            return 1;
 //        }
-//        else if (utility1 > utility2) {
+//        // order o1 before o2, set o1 < o2.
+//        else if (Math.abs(utility1 - myUtility) < Math.abs(utility2 - myUtility)) {
 //            return -1;
 //        }
 //        else if (utility1 == utility2) {
 //            return 0;
 //        }
+        
+        // Simply order subset according to utility decreasing. 
+        if (utility1 < utility2) {
+            return 1;
+        }
+        else if (utility1 > utility2) {
+            return -1;
+        }
+        else if (utility1 == utility2) {
+            return 0;
+        }
         
         return 1;
     }

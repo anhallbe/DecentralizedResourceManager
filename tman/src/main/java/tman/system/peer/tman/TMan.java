@@ -82,8 +82,8 @@ public final class TMan extends ComponentDefinition {
             SchedulePeriodicTimeout rst = new SchedulePeriodicTimeout(period, period);
             rst.setTimeoutEvent(new TManSchedule(rst));
             trigger(rst, timerPort);
-            viewTMan = new ArrayList<PeerDescriptorTMan>();
             
+            viewTMan = new ArrayList<PeerDescriptorTMan>();            
             myDescriptor = new PeerDescriptorTMan(self, availableResources);
         }
     };
@@ -98,14 +98,17 @@ public final class TMan extends ComponentDefinition {
                 ArrayList<PeerDescriptorTMan> temp = new ArrayList<PeerDescriptorTMan>();
                 temp.add(myDescriptor);
                 List<PeerDescriptorTMan> buffer = merge(viewTMan, temp);
-                // Remove the peers in buffer whose address is the same as p.
+                
+                // Remove the peers in sending buffer whose address is the same as p.
                 List<PeerDescriptorTMan> tempList = new ArrayList<PeerDescriptorTMan>(buffer);
                 for (PeerDescriptorTMan b : tempList) {
                     if (b.getAddress().getId() == p.getAddress().getId()) {
                         buffer.remove(b);
                     }
-                }                
+                }
+                
                 buffer = rank(p, buffer);
+                // If buffer.size() < m, return buffer.size() peers.
                 buffer = buffer.subList(0, Math.min(m, buffer.size()));
                 ExchangeMsg.Request req = new ExchangeMsg.Request(new DescriptorBufferTMan(myDescriptor, buffer), self, p.getAddress());
                 trigger(req, networkPort);
@@ -201,13 +204,14 @@ public final class TMan extends ComponentDefinition {
             List<PeerDescriptorTMan> temp = new ArrayList<PeerDescriptorTMan>();
             temp.add(myDescriptor);
             List<PeerDescriptorTMan> buffer = merge(viewTMan, temp);
-            buffer = rank(event.getRequestBuffer().getFrom(), buffer);            
+            buffer = rank(event.getRequestBuffer().getFrom(), buffer);
+            // If buffer.size() < m, return buffer.size() peers.
             buffer = buffer.subList(0, Math.min(m, buffer.size()));
             ExchangeMsg.Response resp = new ExchangeMsg.Response(new DescriptorBufferTMan(myDescriptor, buffer), self, event.getSource());
             trigger(resp, networkPort);
             
             List<PeerDescriptorTMan> bufferQ = event.getRequestBuffer().getDescriptors();
-            viewTMan = merge(bufferQ, viewTMan);
+            viewTMan = merge(viewTMan, bufferQ);
         }
     };
 
@@ -215,28 +219,31 @@ public final class TMan extends ComponentDefinition {
         @Override
         public void handle(ExchangeMsg.Response event) {
             List<PeerDescriptorTMan> buffer = event.getResponseBuffer().getDescriptors();
-            // TODO delete the descriptors in buffer whose address is same as myDescriptor.
+            
+            // Delete the descriptors in buffer whose address is same as myDescriptor.
             List<PeerDescriptorTMan> tempList = new ArrayList<PeerDescriptorTMan>(buffer);
             for (PeerDescriptorTMan b : tempList) {
                 if (b.getAddress().getId() == myDescriptor.getAddress().getId()) {
                     buffer.remove(b);
                 }
             }
+            
             viewTMan = merge(viewTMan, buffer);
             
             // Publish sample to connected components
             List<PeerDescriptorTMan> rankedView = rank(myDescriptor, viewTMan);
             
-            System.out.println(self.getId() + " free cup: " + myDescriptor.getAvailableResources().getNumFreeCpus() + " After ranking: ");
-            for(int i = 0; i < viewTMan.size(); i++) {
-                if (viewTMan.get(i).getAvailableResources() != null) {
-                    System.out.print(viewTMan.get(i).getAvailableResources().getNumFreeCpus() + " ");
-                }
-                else {
-                    System.out.print(-1 + " ");
-                }
-            }
-            System.out.println();
+//            // Test: check the order of ranked sublist
+//            System.out.println(self.getId() + " free cup: " + myDescriptor.getAvailableResources().getNumFreeCpus() + " After ranking: ");
+//            for(int i = 0; i < viewTMan.size(); i++) {
+//                if (viewTMan.get(i).getAvailableResources() != null) {
+//                    System.out.print(viewTMan.get(i).getAvailableResources().getNumFreeCpus() + " ");
+//                }
+//                else {
+//                    System.out.print(-1 + " ");
+//                }
+//            }
+//            System.out.println();
             
             tmanPartners.clear();
             for(int i=0; i<sampleSize; i++)

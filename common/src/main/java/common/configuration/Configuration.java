@@ -34,7 +34,7 @@ public class Configuration {
         this.seed = seed;
         searchConfiguration = new RmConfiguration(seed);
         // Set TMan period and temperature
-        tmanConfiguration = new TManConfiguration(seed, 1000, 0.8);
+        tmanConfiguration = new TManConfiguration(seed, 100, 0.8);
         cyclonConfiguration = new CyclonConfiguration(seed, 5, 10, 1000, 500000,
                 (long) (Integer.MAX_VALUE - Integer.MIN_VALUE), 20);
 
