@@ -300,6 +300,7 @@ public final class ResourceManager extends ComponentDefinition {
                 System.out.println("Response: FAILURE.....Now what?");
         }
     };
+    
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {
