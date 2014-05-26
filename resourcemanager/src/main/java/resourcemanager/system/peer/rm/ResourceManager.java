@@ -58,6 +58,7 @@ public final class ResourceManager extends ComponentDefinition {
     private Map<Integer, List<PeerDescriptor>> routingTable;
     
     private final int NPROBES = 2;
+    
     private List<Probe.Response> probeResponses;
     private Queue<Task> pendingTasks;      //This queue contains tasks that need to be performed on this node.
     private int MAX_CPU;
@@ -321,23 +322,23 @@ public final class ResourceManager extends ComponentDefinition {
 //                logger.info("\t" + n.getId());
             
             // update routing tables
-            for (Address p : neighbours) {
-                int partition = p.getId() % configuration.getNumPartitions();
-                List<PeerDescriptor> nodes = routingTable.get(partition);
-                if (nodes == null) {
-                    nodes = new ArrayList<PeerDescriptor>();
-                    routingTable.put(partition, nodes);
-                }
-                // Note - this might replace an existing entry in Lucene
-                nodes.add(new PeerDescriptor(p));
-                // keep the freshest descriptors in this partition
-                Collections.sort(nodes, peerAgeComparator);
-                List<PeerDescriptor> nodesToRemove = new ArrayList<PeerDescriptor>();
-                for (int i = nodes.size(); i > configuration.getMaxNumRoutingEntries(); i--) {
-                    nodesToRemove.add(nodes.get(i - 1));
-                }
-                nodes.removeAll(nodesToRemove);
-            }
+//            for (Address p : neighbours) {
+//                int partition = p.getId() % configuration.getNumPartitions();
+//                List<PeerDescriptor> nodes = routingTable.get(partition);
+//                if (nodes == null) {
+//                    nodes = new ArrayList<PeerDescriptor>();
+//                    routingTable.put(partition, nodes);
+//                }
+//                // Note - this might replace an existing entry in Lucene
+//                nodes.add(new PeerDescriptor(p));
+//                // keep the freshest descriptors in this partition
+//                Collections.sort(nodes, peerAgeComparator);
+//                List<PeerDescriptor> nodesToRemove = new ArrayList<PeerDescriptor>();
+//                for (int i = nodes.size(); i > configuration.getMaxNumRoutingEntries(); i--) {
+//                    nodesToRemove.add(nodes.get(i - 1));
+//                }
+//                nodes.removeAll(nodesToRemove);
+//            }
         }
     };
 	
