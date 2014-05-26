@@ -42,35 +42,41 @@ public class ComparatorByCPU implements Comparator<PeerDescriptorTMan>{
             myUtility = -1;
         }
         
-//        // Use gradient to order subset.
-//        // order o1 before o2, set o1 < o2.
-//        if (utility1 > myUtility && utility2 < myUtility) {
-//            return -1;
-//        }
-//        // order o2 before o1, set o1 > o2.
-//        else if (utility1 < myUtility && utility2 > myUtility) {
+        // Use gradient to order subset.
+        // pick o1 return -1, pick o2 return 1;
+        if (utility1 == utility2) {
+            return 0;
+        }
+        else if (utility1 > myUtility && utility2 > myUtility) {
+            if (utility1 > utility2) {
+                return 1;
+            }
+            else {
+                return -1;
+            }
+        }
+        else {
+            if (utility1 > utility2) {
+                return -1;
+            }
+            else {
+                return 1;
+            }
+        }
+        
+        
+//        // Simply order subset according to utility decreasing. 
+//        if (utility1 < utility2) {
 //            return 1;
 //        }
-//        // order o1 before o2, set o1 < o2.
-//        else if (Math.abs(utility1 - myUtility) < Math.abs(utility2 - myUtility)) {
+//        else if (utility1 > utility2) {
 //            return -1;
 //        }
 //        else if (utility1 == utility2) {
 //            return 0;
 //        }
         
-        // Simply order subset according to utility decreasing. 
-        if (utility1 < utility2) {
-            return 1;
-        }
-        else if (utility1 > utility2) {
-            return -1;
-        }
-        else if (utility1 == utility2) {
-            return 0;
-        }
-        
-        return 1;
+        //return 1;
     }
     
     

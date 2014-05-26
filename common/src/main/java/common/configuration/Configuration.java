@@ -33,8 +33,8 @@ public class Configuration {
     public Configuration(long seed) throws IOException {
         this.seed = seed;
         searchConfiguration = new RmConfiguration(seed);
-        // Set TMan period and temperature
-        tmanConfiguration = new TManConfiguration(seed, 100, 0.8);
+        // Set TMan period and temperature, 100 ms has better performance than 1000 ms
+        tmanConfiguration = new TManConfiguration(seed, 1000, 0.8);
         cyclonConfiguration = new CyclonConfiguration(seed, 5, 10, 1000, 500000,
                 (long) (Integer.MAX_VALUE - Integer.MIN_VALUE), 20);
 
