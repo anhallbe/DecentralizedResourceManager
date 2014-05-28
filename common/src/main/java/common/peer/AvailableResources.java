@@ -13,10 +13,14 @@ public class AvailableResources {
 
     private volatile int numFreeCpus;
     private volatile int freeMemInMbs;
+    private final int maxCPU;
+    private final int maxMem;
 
     public AvailableResources(int numFreeCpus, int freeMemInMbs) {
         this.numFreeCpus = numFreeCpus;
         this.freeMemInMbs = freeMemInMbs;
+        this.maxCPU = numFreeCpus;
+        this.maxMem = freeMemInMbs;
     }
 
     
@@ -51,5 +55,13 @@ public class AvailableResources {
 
     public int getFreeMemInMbs() {
         return freeMemInMbs;
+    }
+
+    public int getMaxCPU() {
+        return maxCPU;
+    }
+
+    public int getMaxMem() {
+        return maxMem;
     }
 }

@@ -119,7 +119,15 @@ public final class TMan extends ComponentDefinition {
     
     public List<PeerDescriptorTMan> rank(PeerDescriptorTMan myDescriptor, List<PeerDescriptorTMan> view) {
 //        throw new NotImplementedException();
-        Collections.sort(view, new ComparatorByCPU(myDescriptor));
+//        Collections.sort(view, new ComparatorByCPU(myDescriptor));
+        Collections.sort(view, new ComparatorByCpuAndMem(myDescriptor));
+//        Collections.sort(view, new ComparatorByMemory(myDescriptor));
+        
+//        if(myDescriptor.getAvailableResources() != null)
+//            System.out.println("Ordered view (Base CPU: " + myDescriptor.getAvailableResources().getNumFreeCpus() + " Mem: " + myDescriptor.getAvailableResources().getFreeMemInMbs() + "):");
+//        for(PeerDescriptorTMan p : view)
+//            if(p.getAvailableResources() != null)
+//                System.out.println("CPU: " + p.getAvailableResources().getNumFreeCpus()+ " MEM: " + p.getAvailableResources().getFreeMemInMbs());
         return view;
     }
     

@@ -5,10 +5,8 @@ import common.peer.AvailableResources;
 import common.simulation.RequestResource;
 import cyclon.system.peer.cyclon.CyclonSample;
 import cyclon.system.peer.cyclon.CyclonSamplePort;
-import cyclon.system.peer.cyclon.PeerDescriptor;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,6 +51,8 @@ public final class ResourceManager extends ComponentDefinition {
     private AvailableResources availableResources;
     
     private final int NPROBES = 2;
+    private final boolean USE_TMAN = true;
+    private final boolean USE_CYCLON = !USE_TMAN;
     
     private List<Probe.Response> probeResponses;    //Keeps all probe responses
     private Queue<Task> pendingTasks;               //This queue contains tasks that need to be performed on this node.
@@ -251,8 +251,10 @@ public final class ResourceManager extends ComponentDefinition {
         @Override
         public void handle(CyclonSample event) {
             // receive a new list of neighbours 
-//            neighbours.clear();
-//            neighbours.addAll(event.getSample());
+            if(USE_CYCLON) {
+                neighbours.clear();
+                neighbours.addAll(event.getSample());
+            }
         }
     };
 	
@@ -262,8 +264,10 @@ public final class ResourceManager extends ComponentDefinition {
     Handler<TManSample> handleTManSample = new Handler<TManSample>() {
         @Override
         public void handle(TManSample event) {
-            neighbours.clear();
-            neighbours.addAll(event.getSample());
+            if(USE_TMAN) {
+                neighbours.clear();
+                neighbours.addAll(event.getSample());
+            }
         }
     };
 
