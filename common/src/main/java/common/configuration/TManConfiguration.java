@@ -11,14 +11,14 @@ public final class TManConfiguration {
 
     private final long period;
     private final long seed;
-    private final double temperature;
+    private final int gradientType;
 
 
-    public TManConfiguration(long seed, long period, double temperature) {
+    public TManConfiguration(long seed, long period, int gradientType) {
         super();
         this.seed = seed;
         this.period = period;
-        this.temperature = temperature;
+        this.gradientType = gradientType;
     }
 
     public long getSeed() {
@@ -30,17 +30,11 @@ public final class TManConfiguration {
         return this.period;
     }
 
-    
-    public double getTemperature() {
-        return temperature;
-    }
-    
-
     public void store(String file) throws IOException {
         Properties p = new Properties();
         p.setProperty("seed", "" + seed);
         p.setProperty("period", "" + period);
-        p.setProperty("temperature", "" + temperature);
+        p.setProperty("gradient_type", "" + gradientType);
 
         Writer writer = new FileWriter(file);
         p.store(writer, "se.sics.kompics.p2p.overlay.application");
@@ -54,8 +48,13 @@ public final class TManConfiguration {
 
         long seed = Long.parseLong(p.getProperty("seed"));
         long period = Long.parseLong(p.getProperty("period"));
-        double temp = Double.parseDouble(p.getProperty("temperature"));
+//        double temp = Double.parseDouble(p.getProperty("temperature"));
+        int gtype = Integer.parseInt(p.getProperty("gradient_type"));
+        
+        return new TManConfiguration(seed, period, gtype);
+    }
 
-        return new TManConfiguration(seed, period, temp);
+    public int getGradientType() {
+        return this.gradientType;
     }
 }

@@ -1,5 +1,6 @@
 package tman.system.peer.tman;
 
+import common.configuration.GradientType;
 import common.configuration.TManConfiguration;
 import common.peer.AvailableResources;
 import java.util.ArrayList;
@@ -49,7 +50,9 @@ public final class TMan extends ComponentDefinition {
     private List<PeerDescriptorTMan> viewTMan;
     
     private PeerDescriptorTMan myDescriptor;
-
+    
+    private int GRADIENT_TYPE;
+    
     public class TManSchedule extends Timeout {
 
         public TManSchedule(SchedulePeriodicTimeout request) {
@@ -76,6 +79,7 @@ public final class TMan extends ComponentDefinition {
         public void handle(TManInit init) {
             self = init.getSelf();
             tmanConfiguration = init.getConfiguration();
+            GRADIENT_TYPE = tmanConfiguration.getGradientType();
             period = tmanConfiguration.getPeriod();
             r = new Random(tmanConfiguration.getSeed());
             availableResources = init.getAvailableResources();
@@ -113,15 +117,20 @@ public final class TMan extends ComponentDefinition {
                 ExchangeMsg.Request req = new ExchangeMsg.Request(new DescriptorBufferTMan(myDescriptor, buffer), self, p.getAddress());
                 trigger(req, networkPort);
             }
-            
         }
     };
     
     public List<PeerDescriptorTMan> rank(PeerDescriptorTMan myDescriptor, List<PeerDescriptorTMan> view) {
-//        throw new NotImplementedException();
-//        Collections.sort(view, new ComparatorByCPU(myDescriptor));
-        Collections.sort(view, new ComparatorByCpuAndMem(myDescriptor));
-//        Collections.sort(view, new ComparatorByMemory(myDescriptor));
+        switch(GRADIENT_TYPE) {
+            case GradientType.TYPE_CPU:
+                Collections.sort(view, new ComparatorByCPU(myDescriptor));
+                break;
+            case GradientType.TYPE_MEMORY:
+                Collections.sort(view, new ComparatorByMemory(myDescriptor));
+                break;
+            default:
+                Collections.sort(view, new ComparatorByCpuAndMem(myDescriptor));
+        }
         
 //        if(myDescriptor.getAvailableResources() != null)
 //            System.out.println("Ordered view (Base CPU: " + myDescriptor.getAvailableResources().getNumFreeCpus() + " Mem: " + myDescriptor.getAvailableResources().getFreeMemInMbs() + "):");
@@ -262,41 +271,4 @@ public final class TMan extends ComponentDefinition {
             trigger(new TManSample(tmanPartners), tmanPort);
         }
     };
-
-    // TODO - if you call this method with a list of entries, it will
-    // return a single node, weighted towards the 'best' node (as defined by
-    // ComparatorById) with the temperature controlling the weighting.
-    // A temperature of '1.0' will be greedy and always return the best node.
-    // A temperature of '0.000001' will return a random node.
-    // A temperature of '0.0' will throw a divide by zero exception :)
-    // Reference:
-    // http://webdocs.cs.ualberta.ca/~sutton/book/2/node4.html
-    public PeerDescriptorTMan getSoftMaxPeer(List<PeerDescriptorTMan> view) {
-        Collections.sort(view, new ComparatorByCPU(myDescriptor));
-
-        double rnd = r.nextDouble();
-        double total = 0.0d;
-        double[] values = new double[view.size()];
-        int j = view.size() + 1;
-        for (int i = 0; i < view.size(); i++) {
-            // get inverse of values - lowest have highest value.
-            double val = j;
-            j--;
-            values[i] = Math.exp(val / tmanConfiguration.getTemperature());
-            total += values[i];
-        }
-
-        for (int i = 0; i < values.length; i++) {
-            if (i != 0) {
-                values[i] += values[i - 1];
-            }
-            // normalise the probability for this entry
-            double normalisedUtility = values[i] / total;
-            if (normalisedUtility >= rnd) {
-                return view.get(i);
-            }
-        }
-        return view.get(view.size() - 1);
-    }
-
 }

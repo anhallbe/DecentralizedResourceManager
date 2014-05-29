@@ -29,21 +29,21 @@ public class ComparatorByCpuAndMem implements Comparator<PeerDescriptorTMan>{
         if (o1.getAvailableResources() != null) {
             cpu1 = (double)o1.getAvailableResources().getNumFreeCpus()/(double)o1.getAvailableResources().getMaxCPU();
             mem1 = (double)o1.getAvailableResources().getFreeMemInMbs()/(double)o1.getAvailableResources().getMaxMem();
-            utility1 = mem1+cpu1;
+            utility1 = mem1*cpu1;
         } else {
             utility1 = -1;
         }
         if (o2.getAvailableResources() != null) {
             cpu2 = (double)o2.getAvailableResources().getNumFreeCpus()/(double)o2.getAvailableResources().getMaxCPU();
             mem2 = (double)o2.getAvailableResources().getFreeMemInMbs()/(double)o2.getAvailableResources().getMaxMem();
-            utility2 = mem2+cpu2;
+            utility2 = mem2*cpu2;
         } else {
             utility2 = -1;
         }
         if (myDescriptor.getAvailableResources() != null) {
             myCpu = (double)myDescriptor.getAvailableResources().getNumFreeCpus()/(double)myDescriptor.getAvailableResources().getMaxCPU();
             myMem = (double)myDescriptor.getAvailableResources().getFreeMemInMbs()/(double)myDescriptor.getAvailableResources().getMaxMem();
-            myUtility = myMem+myCpu;
+            myUtility = myMem*myCpu;
         } else {
             myUtility = -1;
         }
