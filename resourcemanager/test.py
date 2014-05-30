@@ -3,6 +3,8 @@ from request_times import *
 import numpy as np
 import scipy.stats as stats
 
+#This simple little script will express the log output in a more meaningful way. I.e the average and 99th percentile times, and a plot.
+
 times = get_time("asd.log")
 times = sort(times)
 ##times = times[0:len(times)-len(times)/100]

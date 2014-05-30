@@ -1,6 +1,6 @@
 import os
 
-
+#Look for all ".log"-files in the current directory and get the execution times.
 def get_times():
     for file in os.listdir():
         if ".log" not in file:
@@ -8,7 +8,9 @@ def get_times():
         print("LOGFILE: {0}".format(file))
         get_time(file)
 
-
+#Given a file with log outputs with the format: time    start/end   requestID
+#Look for all the entries labeled with "end", and compare their timestamps with their respective "start" event.
+#The resulting end-start gives the execution time, i.e the time from a request was made, to the time of allocation.
 def get_time(filename):
     tasks_starts = dict()
     tasks_ends = dict()
