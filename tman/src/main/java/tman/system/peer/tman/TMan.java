@@ -24,7 +24,6 @@ import se.sics.kompics.timer.SchedulePeriodicTimeout;
 import se.sics.kompics.timer.ScheduleTimeout;
 import se.sics.kompics.timer.Timeout;
 import se.sics.kompics.timer.Timer;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import tman.simulator.snapshot.Snapshot;
 
@@ -37,9 +36,9 @@ public final class TMan extends ComponentDefinition {
     Positive<Network> networkPort = positive(Network.class);
     Positive<Timer> timerPort = positive(Timer.class);
     
-    private long period;
-    private Address self;
-    private ArrayList<Address> tmanPartners;
+    private long period;        //Determines the frequency of shuffles and sampling.
+    private Address self;  
+    private ArrayList<Address> tmanPartners;    //Contains a partial view of the network.
     private TManConfiguration tmanConfiguration;
     private Random r;
     private AvailableResources availableResources;
@@ -51,7 +50,7 @@ public final class TMan extends ComponentDefinition {
     
     private PeerDescriptorTMan myDescriptor;
     
-    private int GRADIENT_TYPE;
+    private int GRADIENT_TYPE;  //Determines what type of gradient should be used (cpu, memory, combined)
     
     public class TManSchedule extends Timeout {
 
@@ -92,6 +91,9 @@ public final class TMan extends ComponentDefinition {
         }
     };
 
+    /**
+     * Initiate shuffle
+     */
     Handler<TManSchedule> handleRound = new Handler<TManSchedule>() {
         @Override
         public void handle(TManSchedule event) {
@@ -120,6 +122,12 @@ public final class TMan extends ComponentDefinition {
         }
     };
     
+    /**
+     * Rank the nodes in the view, according to some gradient.
+     * @param myDescriptor
+     * @param view
+     * @return 
+     */
     public List<PeerDescriptorTMan> rank(PeerDescriptorTMan myDescriptor, List<PeerDescriptorTMan> view) {
         switch(GRADIENT_TYPE) {
             case GradientType.TYPE_CPU:
@@ -199,6 +207,9 @@ public final class TMan extends ComponentDefinition {
         return tempList;        
     }
     
+    /**
+     * Basically used for bootstrapping, and helping new nodes enter the network.
+     */
     Handler<CyclonSample> handleCyclonSample = new Handler<CyclonSample>() {
         @Override
         public void handle(CyclonSample event) {

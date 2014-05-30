@@ -11,6 +11,9 @@ import se.sics.kompics.timer.Timeout;
  */
 public class RequestResources  {
 
+    /**
+     * This request should be considered an allocation request. I.e S requests that R allocates some resources.
+     */
     public static class Request extends Message {
 
         private final int numCpus;
@@ -63,6 +66,9 @@ public class RequestResources  {
         }
     }
     
+    /**
+     * Not in use at the moment. TODO: Use
+     */
     public static class RequestTimeout extends Timeout {
         private final Address destination;
         RequestTimeout(ScheduleTimeout st, Address destination) {

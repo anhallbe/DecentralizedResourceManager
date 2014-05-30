@@ -31,9 +31,10 @@ import tman.system.peer.tman.TManSample;
 import tman.system.peer.tman.TManSamplePort;
 
 /**
- * Should have some comments here.
- *
- * @author jdowling
+ * Resource Manager is responsible for handling requests from the application. 
+ * Whenever a resource request is received, the Resource Manager will make sure
+ * that the resources are allocated on the best possible node. The RM can either
+ * use random peer samples from Cyclon, or a gradient network from TMan.
  */
 public final class ResourceManager extends ComponentDefinition {
 
@@ -50,8 +51,8 @@ public final class ResourceManager extends ComponentDefinition {
     Random random;
     private AvailableResources availableResources;
     
-    private final int NPROBES = 2;
-    private final boolean USE_TMAN = true;
+    private final int NPROBES = 2;          //Number of probes per task (probe ratio 2)
+    private final boolean USE_TMAN = true;  //Use CYCLON xor TMAN
     private final boolean USE_CYCLON = !USE_TMAN;
     
     private List<Probe.Response> probeResponses;    //Keeps all probe responses
@@ -240,7 +241,7 @@ public final class ResourceManager extends ComponentDefinition {
             }            
             
             else
-                System.out.println("Response: FAILURE.....Now what?");
+                System.out.println("Response: FAILURE");
         }
     };
     

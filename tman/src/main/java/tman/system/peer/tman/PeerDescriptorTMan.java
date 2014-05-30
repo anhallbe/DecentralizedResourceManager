@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package tman.system.peer.tman;
 
 import common.peer.AvailableResources;
@@ -16,8 +10,8 @@ import se.sics.kompics.address.Address;
  */
 public class PeerDescriptorTMan implements Serializable {
     private static final long serialVersionUID = 1L;
-    private Address address;
-    private AvailableResources availableResources;
+    private final Address address;
+    private final AvailableResources availableResources;
 
     public PeerDescriptorTMan(Address address, AvailableResources availableResources) {
         this.address = address;

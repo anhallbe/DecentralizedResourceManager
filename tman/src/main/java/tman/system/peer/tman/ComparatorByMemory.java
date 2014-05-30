@@ -1,18 +1,13 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package tman.system.peer.tman;
 
 import java.util.Comparator;
 
+
 /**
- *  TODO: Change to PeerDesctiptorTMan
- * @author Zhao Zhengyang
- */
-public class ComparatorByMemory implements Comparator<PeerDescriptorTMan>{
+ * This Comparator is used to sort nodes in order to build a gradient network.
+ * In this case, we only consider the amount of free memory.
+ * @author Andreas
+ */public class ComparatorByMemory implements Comparator<PeerDescriptorTMan>{
     
     PeerDescriptorTMan myDescriptor;
     
@@ -63,21 +58,5 @@ public class ComparatorByMemory implements Comparator<PeerDescriptorTMan>{
                 return 1;
             }
         }
-        
-        
-//        // Simply order subset according to utility decreasing. 
-//        if (utility1 < utility2) {
-//            return 1;
-//        }
-//        else if (utility1 > utility2) {
-//            return -1;
-//        }
-//        else if (utility1 == utility2) {
-//            return 0;
-//        }
-        
-        //return 1;
     }
-    
-    
 }

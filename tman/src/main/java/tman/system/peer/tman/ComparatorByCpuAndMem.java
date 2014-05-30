@@ -1,16 +1,13 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package tman.system.peer.tman;
 
 import java.util.Comparator;
 
+
 /**
- *  TODO: Change to PeerDesctiptorTMan
- * @author Zhao Zhengyang
+ * This Comparator is used to sort nodes in order to build a gradient network.
+ * In this case, we consider Memory and CPU to be equally important. Or rather,
+ * the ratio between freeResource/maxResource.
+ * @author Andreas
  */
 public class ComparatorByCpuAndMem implements Comparator<PeerDescriptorTMan>{
     

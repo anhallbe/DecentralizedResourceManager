@@ -13,12 +13,13 @@ import se.sics.kompics.network.Message;
 /**
  *
  * @author Andreas
- * TODO Use queue size instead of resource availability.
  */
 public class Probe {
+    /**
+     * When a probe request is sent from A to B, A wants to know the current workload of B (i.e length of the work queue).
+     */
     public static class Request extends Message implements Serializable {
         private static final long serialVersionUID = 6778950069751417666L;
-        //private static final long serialVersionUID = 123;
         private long id;
         
         public Request(Address source, Address destination, long id) {
@@ -31,9 +32,11 @@ public class Probe {
         }
     }
     
+    /**
+     * A response should contain the current length of the responder's work queue.
+     */
     public static class Response extends Message implements Serializable, Comparable<Response> {
         private static final long serialVersionUID = 6566343625721530642L;
-       // private static final long serialVersionUID = 321;
         private long id;
         private int queueLength;
         
